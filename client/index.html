@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FriendsCinema</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/index.css">
+     <!-- <link rel="stylesheet" href="css/active-sessions.css">  Если создашь отдельные CSS файлы -->
+     <!-- <link rel="stylesheet" href="css/my-sessions.css"> -->
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html" id="logo-link">FriendsCinema</a></div>
+        <div class="user-profile" id="user-profile">
+            <div class="user-icon" id="user-icon"></div>
+            <div class="dropdown-content" id="dropdown-content">
+                <a href="#" id="active-sessions-link">Active Sessions</a>
+                <div class="active-sessions-panel" style="display: none;">
+                    <!-- Список активных сессий будет здесь -->
+                </div>
+                <a href="#" id="my-sessions-link">My Sessions</a>
+                  <div class="my-sessions-panel" style="display: none;">
+                    <!-- Список сессий пользователя будет здесь -->
+                </div>
+                <a href="#" id="logout-link">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="room-options">
+            <div class="room-option" id="join-room-option">
+                <h2>Join Room</h2>
+                <input type="text" id="join-room-code" placeholder="Room Code">
+                <button id="join-room-btn">Join</button>
+                <p class="error-message" id="join-error"></p>
+            </div>
+            <div class="room-option" id="create-room-option">
+                <h2>Create Room</h2>
+                <input type="text" id="create-room-name" placeholder="Room Name (max 16 chars)" maxlength="16">
+                <input type="number" id="create-room-capacity" placeholder="Max Users (max 10)" min="1" max="10">
+                <button id="create-room-btn">Create</button>
+                <p class="error-message" id="create-error"></p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Footer</p>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

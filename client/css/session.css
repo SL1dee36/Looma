@@ -1,0 +1,157 @@
+/* --- START OF FILE css/session.css --- */
+body {
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text */
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.video-player-container {
+    width: 100%;
+    position: relative;
+    margin-bottom: 20px;
+    height: 60vh;
+}
+
+.video-player-container iframe {
+    border: 1px solid #333; /* Darker border */
+    border-radius: 6px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: -webkit-fill-available;
+    height: 100%;
+}
+.content-area {
+    display: flex;
+    position: relative;
+    gap: 20px;
+    flex-direction: row;
+}
+
+@media screen and (max-width: 900px) {
+    .content-area {
+        display: flex;
+        position: relative;
+        gap: 20px;
+        flex-direction: column;
+    }
+}
+
+.chat-container {
+    border-radius: 6px;
+    flex: 1; /* Chat takes up remaining space */
+    border: 1px solid #333; /* Darker border */
+    background-color: #1e1e1e; /* Dark background for chat */
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+#chat-messages {
+    flex-grow: 1;
+    max-height: 50vh; /* Adjusted width for smaller screens */
+    overflow-y: auto; /* Scrollable chat messages */
+    margin-bottom: 10px;
+    border: 1px solid #444; /* Darker border */
+    background-color: #282828; /* Slightly lighter dark background */
+    padding: 5px;
+    
+    /* Сделай полосу прокуртки маленькой */
+    scrollbar-width: thin;
+    scrollbar-color: #444 #282828; /* Darker color for scrollbar */
+
+}
+
+#chat-messages p {
+    margin: 0.5rem 0; /* Added a little more spacing */
+}
+#message-input {
+    padding: 10px;
+    border: 1px solid #555; /* Darker border */
+    background-color: #333; /* Dark input background */
+    color: #eee;  /* Light text for input */
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+#message-input:focus {
+    outline: none;
+    border-color: #4CAF50;  /* Highlight on focus (same as button) */
+}
+
+#send-message-btn {
+    padding: 10px;
+    background-color: #4CAF50; /* Keep the green button */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+#send-message-btn:hover {
+     background-color: #388e3c; /* Darker Green */
+}
+
+
+.session-settings {
+    min-width: 300px;
+    border: 1px solid #333; /* Darker border */
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 6px;
+
+}
+
+/* поля для ввода должны быть подходящие под тёмную тему: text,numbers,checkbox, и кнопки с id: update-content-btn,leave-room-btn */
+.session-settings input[type="text"],
+.session-settings input[type="number"],
+/* .session-settings input[type="checkbox"], */
+.session-settings button {
+  transition: all 0.1s ease;
+  background-color: #333; /* Darker background */
+  color: #ffffff; /* Light text */
+  border: 1px solid #555; /* Darker border */
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  width: -webkit-fill-available;
+  margin-top: 10px;
+}
+
+.session-settings button:hover {
+    transition: all 0.1s ease;
+    background-color: #444;
+    /* border: 1px dashed #555; */
+}
+
+.session-settings h2 {
+    margin-bottom: 15px;
+    color: #fff;
+}
+
+.session-settings label,p {
+    color: #fff;
+}
+
+#delete-room-btn {
+  background-color: #f44336; /* Red color for delete */
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  display: none; /* Hidden by default */
+  transition: background-color 0.3s ease;
+}
+#delete-room-btn:hover {
+  background-color: #d32f2f; /*Darker red*/
+}
+
+/* --- END OF FILE css/session.css --- */

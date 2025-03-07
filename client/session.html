@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/session.css">
+    <!-- <link rel="stylesheet" href="css/active-sessions.css">  Если создашь отдельные CSS файлы -->
+    <!-- <link rel="stylesheet" href="css/my-sessions.css"> -->
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html" id="logo-link">FriendsCinema</a></div>
+        <div class="user-profile" id="user-profile">
+            <div class="user-icon" id="user-icon"></div>
+            <div class="dropdown-content" id="dropdown-content">
+                <a href="#" id="active-sessions-link">Active Sessions</a>
+                <div class="active-sessions-panel" style="display: none;">
+                    <!-- Список активных сессий будет здесь -->
+                </div>
+                <a href="#" id="my-sessions-link">My Sessions</a>
+                  <div class="my-sessions-panel" style="display: none;">
+                    <!-- Список сессий пользователя будет здесь -->
+                </div>
+                <a href="#" id="logout-link">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="video-player-container">
+            <div id="player"></div> <!-- YouTube player will go here -->
+        </div>
+        <div class="content-area">
+            <div class="chat-container">
+                <h2>Chat</h2>
+                <div id="chat-messages">
+                    <!-- Messages will be added here -->
+                </div>
+                <input type="text" id="message-input" placeholder="Type your message...">
+                <button id="send-message-btn">Send</button>
+            </div>
+
+            <div class="session-settings">
+                <div class="owner-settiongs">
+                <h2>Session Settings (Owner Only)</h2>
+                    <!-- Video URL input -->
+                    <div>
+                        <label for="video-url">Video URL:</label>
+                        <input type="text" id="video-url" placeholder="Enter YouTube URL">
+                    </div>
+                    <!-- Is Playing checkbox -->
+                    <div>
+                        <label for="is-playing">Playing:</label>
+                        <input type="checkbox" id="is-playing">
+                    </div>
+
+                    <!-- Playback Position -->
+                    <div>
+                        <label for="playback-position">Playback Position (seconds):</label>
+                        <input type="number" id="playback-position" min="0" step="0.1" value="0">
+                    </div>
+
+                    <button id="update-content-btn">Update Content</button>
+                </div>
+                <p class="error-message" id = "update-content-error-message"></p>
+                 <div id="room-info">
+                    <p>Room Code: <span id="room-code"></span></p>
+                    <p>Owner: <span id="room-owner"></span></p>
+                 </div>
+                <button id="leave-room-btn">Leave Room</button>
+                <button id="delete-room-btn">Delete Room</button> <!-- Only visible to owner -->
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Footer</p>
+    </footer>
+    <script src="https://www.youtube.com/iframe_api"></script> <!-- YouTube API -->
+    <script src="js/utils.js"></script>
+    <script src="js/session.js"></script>
+</body>
+</html>
