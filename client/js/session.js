@@ -1,9 +1,11 @@
-// --- session.js (Frontend Room Membership Check) ---
+// --- session.js (Frontend - Улучшенная синхронизация) ---
 let player;
 let roomId;
 let isOwner = false;
 let roomOwnerId = null;
 let lastContentUpdate = null; // Keep track of last received content update
+let lastSentTime = 0; // Timestamp of the last time update sent
+const SYNC_INTERVAL = 500;  // Minimum interval between time updates (ms)
 
 document.addEventListener('DOMContentLoaded', () => {
     const userIcon = document.getElementById('user-icon');
@@ -18,10 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
 
-    const updateContentBtn = document.getElementById('update-content-btn');
-    const videoUrlInput = document.getElementById('video-url');
-    const isPlayingCheckbox = document.getElementById('is-playing');
-    const playbackPositionInput = document.getElementById('playback-position');
+    const updateContentBtn = document.getElementById('update-content-btn'); // Keep for *initial* video set
+    const videoUrlInput = document.getElementById('video-url'); // Keep for initial URL
+    // const isPlayingCheckbox = document.getElementById('is-playing'); // REMOVE
+    // const playbackPositionInput = document.getElementById('playback-position'); // REMOVE
     const deleteRoomBtn = document.getElementById('delete-room-btn');
     const leaveRoomBtn = document.getElementById('leave-room-btn');
     const roomCodeSpan = document.getElementById('room-code');
@@ -92,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Correctly get owner's username, handle potential null
             roomOwnerSpan.textContent = roomData.users.find(user => user.id === roomOwnerId)?.username || "Unknown";
 
-            // Show/hide delete button based on ownership
+            // Show/hide delete button based on ownership, and remove other controls
             if (isOwner) {
                 deleteRoomBtn.style.display = 'block';
             }
@@ -140,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Invalid YouTube URL');
             return;
         }
-
+    
         if (player && player.getVideoData && player.getVideoData().video_id === videoId) {
             updatePlayerState(position, shouldPlay); //Just update state.
         }
@@ -151,7 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             player = new YT.Player('player', {
                 videoId: videoId,
-                playerVars: { 'playsinline': 1 },
+                playerVars: {
+                    'playsinline': 1,
+                    'modestbranding': 1,
+                    'autoplay': 1,
+                    'color': 'white',
+                },
                 events: {
                     'onReady': (event) => {
                         // Initial setup: Seek and play/pause
@@ -181,10 +188,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // IMPORTANT: Only send updates if the *owner* changes the state
+
+    // IMPORTANT: Only send updates if the *owner* changes the state, and include buffering
     function onPlayerStateChange(event) {
-        if (isOwner && (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED)) {
-            updateContent();
+        if (isOwner) {
+            const currentTime = player.getCurrentTime();
+            const now = Date.now();
+
+            // Always send updates for play/pause/buffer/end, but limit time updates
+            if (event.data === YT.PlayerState.PLAYING ||
+                event.data === YT.PlayerState.PAUSED ||
+                event.data === YT.PlayerState.BUFFERING ||
+                event.data === YT.PlayerState.ENDED ||
+                (now - lastSentTime > SYNC_INTERVAL)) {
+
+                updateContent();
+                lastSentTime = now;
+            }
         }
     }
 
@@ -257,27 +277,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
-    // --- Content Update (Owner) ---
+    // --- Content Update (Owner) - ONLY for initial video set ---
     updateContentBtn.addEventListener('click', () => {
         if (isOwner) {
-            updateContent(); // Call the update function
+            updateContent(true); //  initial video set
         }
     });
 
-    async function updateContent() {
-        updateError.textContent = ""; // Clear previous errors
-        const video_url = videoUrlInput.value;
-        const is_playing = isPlayingCheckbox.checked;
-        const playback_position = parseFloat(playbackPositionInput.value);
 
-        if (!video_url) {
-            updateError.textContent = 'Please provide a video URL.';
-            return;
+    // --- Modified updateContent function ---
+    async function updateContent(isInitialSet = false) {
+        updateError.textContent = ""; // Clear previous errors
+        let video_url = null;
+
+        // Only get URL from input if it's the initial set
+        if (isInitialSet) {
+            video_url = videoUrlInput.value;
+             if (!video_url) {
+                updateError.textContent = 'Please provide a video URL.';
+                return;
+            }
         }
-        if (isNaN(playback_position) || playback_position < 0) {
-            updateError.textContent = 'Invalid playback position.';
-            return;
+        else {
+            video_url = player.getVideoData().video_id ? `https://www.youtube.com/watch?v=${player.getVideoData().video_id}` : null;
         }
+
+        const is_playing = player.getPlayerState() === YT.PlayerState.PLAYING;
+        const playback_position = player.getCurrentTime();
+
+        if (!video_url)
+        {
+           if (isInitialSet)
+           {
+              updateError.textContent = 'Please provide a video URL.';
+              return;
+           }
+           //If not initial and no url, it means player is not set
+           //so do nothing, because content is not set yet.
+           return;
+
+        }
+
 
         try {
             const response = await authFetch(`https://g0tqrn67-5000.euw.devtunnels.ms/rooms/${roomId}/content`, {
@@ -292,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             updateError.textContent = error.message;
+            console.error("Error updating content", error);
         }
     }
 
@@ -303,8 +344,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await authFetch(`https://g0tqrn67-5000.euw.devtunnels.ms/rooms/${roomId}/content`);
             const data = await response.json();
 
-            // Check if the content has actually changed
-            if (JSON.stringify(data) !== JSON.stringify(lastContentUpdate)) {
+            // More precise comparison to avoid unnecessary actions
+            if (!lastContentUpdate ||
+                data.video_url !== lastContentUpdate.video_url ||
+                data.is_playing !== lastContentUpdate.is_playing ||
+                Math.abs(data.playback_position - lastContentUpdate.playback_position) > 1) {
+
                 lastContentUpdate = data;
 
                 if (data.video_url) {

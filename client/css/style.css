@@ -8,6 +8,9 @@ body {
     min-height: 100vh;
     background-color: #121212; /* Dark background */
     color: #e0e0e0; /* Light text */
+
+    scrollbar-width: thin;
+    scrollbar-color: #444 #00000000;
 }
 
 header {
