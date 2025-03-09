@@ -22,7 +22,7 @@ main {
 }
 
 .video-player-container iframe {
-    border: 1px solid #333; /* Darker border */
+    /* border: 1px solid #333; */
     border-radius: 6px;
     position: absolute;
     top: 0;
@@ -191,4 +191,246 @@ main {
   background-color: #d32f2f; /*Darker red*/
 }
 
+/* --- New Styles for Chat Display --- */
+
+.date-header {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    color: #aaa; /* Slightly lighter than main text */
+    border-bottom: 1px solid #444; /* Subtle separator */
+    padding-bottom: 5px;
+}
+
+.message-container {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+    padding: 5px;
+    word-break: break-all;
+    border: 1px solid #555;
+    background-color: #333;
+    border-radius: 6px;
+    position: relative; /*  Make the container relative for absolute positioning */
+}
+
+.message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #4CAF50; /* Green - adjust as needed */
+    color: white;
+    text-align: center;
+    line-height: 30px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    font-size: 14px; /*  Slightly smaller font */
+}
+
+.message-content {
+    flex-grow: 1; /* Allow content to take remaining space */
+}
+
+.message-username {
+    font-weight: bold;
+    color: #eee; /* Slightly brighter for username */
+    margin-right: 5px;
+}
+
+.message-text {
+    word-wrap: break-word;
+    color: #ccc; /* Slightly darker than username */
+    margin-right: 5px;
+}
+
+.message-time {
+    color: #aaa;
+    font-size: 0.8em;
+    display: flex;
+    flex-direction: row;
+}
+
+/* --- Message Controls (Options Menu) --- */
+
+.message-controls {
+  position: absolute; /* Position controls relative to the container */
+  top: 5px;          /* Align to top */
+  right: 5px;        /* Align to right */
+  display: flex;    /* Use flex for easy alignment */
+  align-items: center;
+  gap: 5px;         /* Space between buttons */
+}
+
+.options-menu-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2em; /* Larger dots */
+    cursor: pointer;
+    padding: 2px 5px; /* Some padding */
+    border-radius: 4px;
+}
+
+.options-menu-btn:hover {
+    background-color: #444; /*  Subtle hover effect */
+    color: #fff;           /*  Brighter color on hover */
+}
+/* --- Options Menu Styling --- */
+
+.options-menu {
+    position: absolute;   /* Position absolutely within the container */
+    top: 25px;          /* Position below the button */
+    right: 0px;            /* Align to the right edge */
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    z-index: 1000;       /* Ensure it's above other content */
+    min-width: 80px;      /* Set a minimum width */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.options-menu button {
+    display: block;     /* Each button on a new line */
+    width: 100%;       /* Full width of the menu */
+    padding: 8px 12px;
+    text-align: left;  /* Align text to the left */
+    background: none;
+    border: none;
+    color: #eee;
+    cursor: pointer;
+    border-bottom: 1px solid #444; /* Subtle separator */
+}
+.options-menu button:last-child{
+  border-bottom: none;
+}
+
+.options-menu button:hover {
+    background-color: #444;
+    color: white;
+}
+
+/* --- Edit Message Input --- */
+.edit-message-input {
+    padding: 5px;
+    border: 1px solid #555;
+    background-color: #444;
+    color: #eee;
+    border-radius: 4px;
+    width: 100%; /* Take up full width */
+    box-sizing: border-box; /* Include padding/border in width */
+}
+.edit-controls {
+    display: flex;
+    margin-top: 5px;
+    gap: 5px;
+}
+
+/* Style for Save/Cancel Buttons in Edit Mode */
+.save-message-btn, .cancel-message-btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.save-message-btn {
+    background-color: #4CAF50; /*  Green */
+    color: white;
+}
+.save-message-btn:hover {
+    background-color: #367c39;
+}
+.cancel-message-btn {
+    background-color: #f44336; /*  Red */
+    color: white;
+}
+.cancel-message-btn:hover{
+    background-color: #d32f2f;
+}
+#clear-chat-btn {
+  margin-top: 10px;
+  background-color: #f44336; /* Red color for delete */
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+#clear-chat-btn:hover {
+    background-color: #d32f2f;
+}
+
+
+/* --- Custom Modal --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 2000; /* Sit on top (higher than options menu) */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #333;
+    color: #eee;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 500px; /*  Max width */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.close-modal-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-modal-btn:hover,
+.close-modal-btn:focus {
+    color: #eee;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modal-buttons {
+    display: flex;
+    justify-content: flex-end; /* Buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px; /* Space above buttons */
+}
+
+#modal-confirm-btn, #modal-cancel-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+#modal-confirm-btn {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+#modal-confirm-btn:hover {
+    background-color: #387d3a;
+}
+
+#modal-cancel-btn {
+    background-color: #f44336; /* Red */
+    color: white;
+}
+#modal-cancel-btn:hover{
+    background-color: #d32f2f;
+}
 /* --- END OF FILE css/session.css --- */

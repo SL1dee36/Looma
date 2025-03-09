@@ -17,15 +17,16 @@ main {
     flex-wrap: wrap; /* Wrap on smaller screens */
     gap: 20px;
     justify-content: center;
+    
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid #555;
+    background-color: #1e1e1e;
 }
 
 .room-option {
-    border: 1px solid #333; /* Darker border */
     padding: 20px;
-    border-radius: 5px;
     width: 300px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Darker shadow */
-    background-color: #1e1e1e; /* Dark background for the box */
     text-align: center;
 }
 

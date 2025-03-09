@@ -1,11 +1,11 @@
-# --- START OF FILE app.py --- (Corrected Again and Updated)
+# --- START OF FILE app.py ---
 import os
 from flask import Blueprint, Flask, jsonify, request, g, send_from_directory
 from config import Config
 from db import init_db, db
 from auth import auth_bp, token_required
 from flask_cors import CORS
-from models import Room, User, Message, RoomContent  # Import RoomContent
+from models import Room, User, Message, RoomContent
 from schemas import UserSchema, RoomSchema, MessageSchema, RoomContentSchema
 from marshmallow import ValidationError
 
@@ -110,6 +110,7 @@ def create_app(config_class=Config):
             if g.current_user.id != room.owner_id:
                 return jsonify({'message': 'You are not the owner of this room'}), 403
             #RoomContent will be automatically deleted because of cascade.
+            #Messages will be automatically deleted, because of cascade.
             db.session.delete(room)
             db.session.commit()
             return jsonify({'message': 'Room deleted successfully'}), 200
@@ -176,18 +177,9 @@ def create_app(config_class=Config):
         schema = MessageSchema()
 
         try:
-            # ЛОГИРУЕМ СЫРЫЕ ДАННЫЕ ЗАПРОСА
-            print("Raw request data:", request.get_json())
-
             data = schema.load(request.get_json())
-
-            # ЛОГИРУЕМ ДАННЫЕ ПОСЛЕ ЗАГРУЗКИ СХЕМОЙ
-            print("Data after schema.load:", data)
-
         except ValidationError as err:
-            # ЛОГИРУЕМ ОШИБКИ ВАЛИДАЦИИ
-            print("Validation errors:", err.messages)
-            return jsonify(err.messages), 400  # Возвращаем ошибки валидации
+            return jsonify(err.messages), 400
 
         message_text = data['text']
         new_message = Message(sender_id=g.current_user.id, room_id=room.id, text=message_text)
@@ -209,15 +201,72 @@ def create_app(config_class=Config):
 
         message_schema = MessageSchema(many=True)
         result = message_schema.dump(messages)
-
-        for message_data in result:
-            # Используем sender, который уже строка
-            # sender = User.query.get(message_data['sender_id']) # УДАЛЯЕМ
-            # message_data['sender'] = sender.username if sender else "Unknown"  # УДАЛЯЕМ
-            # Вместо этого ничего делать не нужно - поле sender уже заполнено!
-            pass
-
         return jsonify({'messages': result}), 200
+
+
+    # NEW: Delete a single message
+    @rooms_bp.route('/<int:room_id>/messages/<int:message_id>', methods=['DELETE'])
+    @token_required
+    def delete_message(room_id, message_id):
+        """Deletes a specific message (only if the user is the sender or room owner)."""
+        room = Room.query.get_or_404(room_id)
+        message = Message.query.get_or_404(message_id)
+
+        if g.current_user not in room.users:
+            return jsonify({'message': 'You are not in this room'}), 403
+
+        if message.room_id != room.id:
+            return jsonify({'message': 'Message is not in this room'}), 400
+
+        if g.current_user.id != message.sender_id and g.current_user.id != room.owner_id:
+            return jsonify({'message': 'You are not authorized to delete this message'}), 403
+
+        db.session.delete(message)
+        db.session.commit()
+        return jsonify({'message': 'Message deleted successfully'}), 200
+
+    # NEW: Edit a message
+    @rooms_bp.route('/<int:room_id>/messages/<int:message_id>', methods=['PUT'])
+    @token_required
+    def edit_message(room_id, message_id):
+        """Edits a specific message (only if the user is the sender)."""
+        room = Room.query.get_or_404(room_id)
+        message = Message.query.get_or_404(message_id)
+
+        if g.current_user not in room.users:
+            return jsonify({'message': 'You are not in this room'}), 403
+
+        if message.room_id != room.id:
+            return jsonify({'message': 'Message is not in this room'}), 400
+
+        if g.current_user.id != message.sender_id:
+            return jsonify({'message': 'You are not authorized to edit this message'}), 403
+
+        schema = MessageSchema()
+        try:
+            data = schema.load(request.get_json())
+        except ValidationError as err:
+            return jsonify(err.messages), 400
+
+        message.text = data['text']
+        db.session.commit()
+        return jsonify({'message': 'Message updated successfully'}), 200
+
+    # NEW: Delete all messages in a room
+    @rooms_bp.route('/<int:room_id>/messages/clear', methods=['DELETE'])
+    @token_required
+    def clear_messages(room_id):
+        """Deletes all messages in a room (only if the current user is the owner)."""
+        room = Room.query.get_or_404(room_id)
+
+        if g.current_user.id != room.owner_id:
+            return jsonify({'message': 'You are not the owner of this room'}), 403
+
+        # Delete messages associated with the room using a query.  No need to load them all.
+        Message.query.filter_by(room_id=room.id).delete()
+        db.session.commit()
+        return jsonify({'message': 'All messages in the room have been deleted'}), 200
+
 
     @rooms_bp.route('/<int:room_id>/leave', methods=['POST'])
     @token_required

@@ -19,13 +19,18 @@ class RoomSchema(Schema):
     def get_current_users_count(self, obj):
         return obj.users.count()
 
+# schemas.py
 class MessageSchema(Schema):
     id = fields.Int(dump_only=True)
-    sender = fields.Str(dump_only=True)  # Оставляем как есть
-    sender_id = fields.Int(dump_only=False, load_only=True) # Добавляем sender_id, разрешаем его использовать при загрузке
+    sender = fields.Method("get_sender_username", dump_only=True)
+    sender_id = fields.Int(load_only=True)
     text = fields.Str(required=True, validate=validate.Length(max=500), load_from='message')
     timestamp = fields.DateTime(dump_only=True)
-    
+
+    def get_sender_username(self, obj):
+        return obj.sender.username
+
+
 class RoomContentSchema(Schema):
     id = fields.Int(dump_only=True)
     room_id = fields.Int(dump_only=True)

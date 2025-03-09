@@ -2,8 +2,8 @@
 
 // Determine the base URL for API calls
 const API_BASE_URL = window.location.protocol === "file:"
-    ? ""  // Local development
-    : ""; // Use relative URLs when deployed or through the tunnel
+    ? "https://g0tqrn67-5000.euw.devtunnels.ms"  // Local development (USE YOUR DESIRED LOCAL URL!)
+    : "https://g0tqrn67-5000.euw.devtunnels.ms"; // Use relative URLs when deployed or through the tunnel
 
 function getAccessToken() {
     return localStorage.getItem('accessToken');
@@ -51,10 +51,39 @@ async function authFetch(url, options = {}) {
     const response = await fetch(fullUrl, { ...options, headers });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'An error occurred'); // Handle server errors
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (jsonError) {
+            // Handle cases where the error response is not valid JSON
+            throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(errorData.message || `HTTP Error ${response.status}: ${response.statusText}`);
     }
 
     return response; // Or response.json() if you expect JSON
+}
+
+// --- unauthFetch function for not authenticated requests ---
+async function unauthFetch(url, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
+
+    const fullUrl = `${API_BASE_URL}${url}`;
+    const response = await fetch(fullUrl, { ...options, headers });
+
+    if (!response.ok) {
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (jsonError) {
+            throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(errorData.message || `HTTP Error ${response.status}: ${response.statusText}`);
+    }
+
+    return response;
 }
 // --- END OF FILE js/utils.js ---

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('login-password').value;
 
         try {
-            const response = await authFetch('https://g0tqrn67-5000.euw.devtunnels.ms/auth/login', {
+            const response = await authFetch('/auth/login', { // Use authFetch
                 method: 'POST',
                 body: JSON.stringify({ username, password }),
             });
@@ -40,15 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('register-password').value;
 
         try {
-            const response = await fetch('https://g0tqrn67-5000.euw.devtunnels.ms/auth/register', {  // No authFetch for registration
+            const response = await unauthFetch('/auth/register', {  // Use unauthFetch for registration
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password }),
             });
             const data = await response.json();
             if (response.status === 201) {
               //Auto-login
-              const loginResponse = await authFetch('https://g0tqrn67-5000.euw.devtunnels.ms/auth/login', {
+              const loginResponse = await authFetch('/auth/login', { // Use authFetch
                 method: 'POST',
                 body: JSON.stringify({ username, password }),
                });

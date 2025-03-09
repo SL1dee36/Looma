@@ -1,4 +1,4 @@
-# --- START OF FILE models.py --- (Corrected)
+# --- START OF FILE models.py ---
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 import jwt
@@ -89,7 +89,7 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship('User', backref=db.backref('messages', lazy=True))
-    room = db.relationship('Room', backref=db.backref('messages', lazy=True))
+    room = db.relationship('Room', backref=db.backref('messages', lazy=True, cascade="all, delete-orphan")) #add cascade
 
     def __repr__(self):
         return f'<Message {self.id} from {self.sender_id} in {self.room_id}>'
