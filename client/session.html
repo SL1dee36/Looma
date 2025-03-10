@@ -27,12 +27,27 @@
     </header>
 
     <main>
-        <div class="video-player-container">
-            <div id="player"></div> <!-- Основной плеер -->
-            
+        <!-- Переключатель источника видео -->
+        <div class="video-source-switcher">
+            <label>
+                <input type="radio" name="video-source" value="youtube" checked> YouTube
+            </label>
+            <label>
+                <input type="radio" name="video-source" value="hdrezka"> HDrezka
+            </label>
         </div>
+
+        <!-- Контейнер для плееров (YouTube и iframe) -->
+        <div class="video-player-container">
+          <div id="player-container">
+            <div id="player"></div> <!-- Основной плеер YouTube-->
+          </div>
+        </div>
+
         <div id="backfill"></div>
-        <div id="background-player"></div> <!-- Фоновый плеер -->
+        <div id="background-player-container">
+           <div id="background-player"></div> <!-- Фоновый плеер -->
+        </div>
         <div class="content-area">
             <div class="chat-container">
                 <div id="chat-messages">
@@ -51,12 +66,22 @@
             <div class="session-settings">
               <div class="owner-settiongs">
                 <h2>Session Settings (Owner Only)</h2>
-                    <!-- Video URL input -->
-                    <div>
-                        <label for="video-url">Video URL:</label>
-                        <input type="text" id="video-url" placeholder="Enter YouTube URL">
-                    </div>
-                <button id="update-content-btn">Set Initial Video</button>
+
+                <div id="hdrezka-search" style="display: none;">  <!-- Скрыт изначально -->
+                    <input type="text" id="movie-title" placeholder="Название фильма">
+                    <button id="search-button">Найти</button>
+                    <div id="search-results"></div>  <!-- Контейнер для результатов поиска -->
+                </div>
+
+                <!-- Video URL input (for YouTube) -->
+                <div id = "youtube-settings">
+                  <div>
+                    <label for="video-url">Video URL:</label>
+                    <input type="text" id="video-url" placeholder="Enter YouTube URL">
+                  </div>
+                  <button id="update-content-btn">Set Initial Video</button>
+                </div>
+
               </div>
                 <p class="error-message" id = "update-content-error-message"></p>
                 <div id="room-info">

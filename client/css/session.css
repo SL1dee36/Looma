@@ -35,13 +35,13 @@ main {
 
 .video-player-container {
     width: -webkit-fill-available;
-    position: relative; /* Очень важно! */
+    position: relative;
     margin-bottom: 20px;
     height: 60vh;
     background-color: #000;
     border-radius: 6px;
     border: 1px solid #333;
-    overflow: hidden; /* Очень важно! */
+    overflow: hidden;
 }
 
 /* Стили для ОСНОВНОГО плеера */
@@ -519,4 +519,62 @@ main {
 }
 #online-users-list li:last-child {
     border-bottom: none; /* No border on the last item */
+}
+
+/* Переключатель источника видео */
+.video-source-switcher {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    margin-inline: 20vw;
+    justify-content: center;
+}
+
+.video-source-switcher label {
+    cursor: pointer;
+    color: #fff;
+}
+
+#background-player-container{
+    position: absolute;
+     top: -12%;
+     left: -20px;
+     width: 100vw;
+     height: 100vh;
+     filter: blur(60px) brightness(0.5);
+     z-index: -2;
+     pointer-events: none;
+}
+
+#player-container{
+      position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#player-container, #hdrezka-search {
+    border-radius: 6px;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#search-results {
+    max-height: 91%;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid #555;
+    background-color: #333;
+    border-radius: 16px;
+}
+
+#search-results ul{
+   margin: 0;
+   padding: 5px;
 }

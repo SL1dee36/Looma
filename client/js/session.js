@@ -1,6 +1,7 @@
 // --- session.js ---
+
 let player;
-let backgroundPlayer; // Переменная для фонового плеера
+let backgroundPlayer;
 let roomId;
 let isOwner = false;
 let roomOwnerId = null;
@@ -9,8 +10,10 @@ let lastSentTime = 0;
 const SYNC_INTERVAL = 500;
 let lastMessageTimestamp = 0;
 let currentUserId = null;
+let currentVideoSource = 'youtube'; // Изначально YouTube
+let iframe = null; // Глобальная переменная для iframe
 
-// --- Modal Functions (Добавляем в начало) ---
+// --- Modal Functions ---
 
 function showConfirmationModal(question, onConfirm, onCancel) {
     const modal = document.getElementById('custom-modal');
@@ -65,6 +68,7 @@ window.addEventListener('click', (event) => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Элементы DOM ---
     const userIcon = document.getElementById('user-icon');
     const dropdownContent = document.getElementById('dropdown-content');
     const logoutLink = document.getElementById('logout-link');
@@ -78,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chat-messages');
 
     const updateContentBtn = document.getElementById('update-content-btn');
-    const videoUrlInput = document.getElementById('video-url');
+    const videoUrlInput = document.getElementById('video-url'); // For YouTube
     const deleteRoomBtn = document.getElementById('delete-room-btn');
     const leaveRoomBtn = document.getElementById('leave-room-btn');
     const roomCodeSpan = document.getElementById('room-code');
@@ -89,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeSessionsPanel = document.querySelector('.active-sessions-panel');
     const mySessionsLink = document.getElementById('my-sessions-link');
     const mySessionsPanel = document.querySelector('.my-sessions-panel');
+
+    const searchInput = document.getElementById('movie-title'); // For HDrezka
+    const searchButton = document.getElementById('search-button'); // For HDrezka
 
     const clearChatBtn = document.createElement('button');
     clearChatBtn.textContent = 'Clear Chat';
@@ -107,17 +114,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.querySelector('.session-settings').appendChild(clearChatBtn);
 
+    // --- Проверка авторизации и получение ID пользователя ---
     if (!isLoggedIn() || !roomId) {
         redirectTo('auth.html');
         return;
     }
     currentUserId = parseInt(parseJwt(getAccessToken()).user_id);
 
+    // --- Установка имени пользователя в иконке ---
     const username = getUsername();
     if (username) {
         userIcon.textContent = username.charAt(0).toUpperCase();
     }
 
+    // --- Обработчики для выпадающего меню ---
     userIcon.addEventListener('click', () => {
         dropdownContent.classList.toggle('show');
     });
@@ -128,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearUsername();
         redirectTo('auth.html');
     });
-
 
     window.addEventListener('click', (event) => {
         if (!event.target.matches('.user-icon')) {
@@ -146,10 +155,138 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Переключатель источника видео ---
+    const videoSourceSwitcher = document.querySelector('.video-source-switcher');
+    const playerContainer = document.getElementById('player-container');
+    const hdrezkaSearch = document.getElementById('hdrezka-search');
+    const youtubeSettings = document.getElementById('youtube-settings');
+    const backgroundPlayerContainer = document.getElementById('background-player-container');
+
+    videoSourceSwitcher.addEventListener('change', (event) => {
+        currentVideoSource = event.target.value;
+        if (currentVideoSource === 'youtube') {
+            playerContainer.style.display = 'block';
+            hdrezkaSearch.style.display = 'none';
+             if (isOwner) {
+                youtubeSettings.style.display = 'block';
+            }
+            if(backgroundPlayer){
+              backgroundPlayerContainer.style.display = "block";
+            }
+            if (player) {
+                player.playVideo(); // Возобновляем YouTube, если он был
+            }
+            destroyHdrezaPlayer(); //Удаляем плеер с фильмом.
+        } else if (currentVideoSource === 'hdrezka') {
+            playerContainer.style.display = 'none';
+            hdrezkaSearch.style.display = 'block';
+            youtubeSettings.style.display = 'none';
+
+            if (backgroundPlayer) {
+                backgroundPlayer.pauseVideo();
+                backgroundPlayerContainer.style.display = "none"; // скрываем
+            }
+            if (player) {
+                player.stopVideo(); // Останавилваем плеер
+            }
+        }
+        // Сбрасываем URL, чтобы при смене источника не было конфликтов
+        updateContentFromServer(null, 0, false);
+    });
+
+    // --- Поиск HDrezka (обработчик) ---
+    searchButton.addEventListener('click', async () => {
+        const movieTitle = searchInput.value;
+        if (movieTitle) {
+            try {
+                const searchResponse = await authFetch('/rooms/search', {
+                    method: 'POST',
+                    body: JSON.stringify({ title: movieTitle }),
+                });
+                if (!searchResponse.ok) {
+                    throw new Error('Search failed');
+                }
+                const searchResults = await searchResponse.json();
+                displaySearchResults(searchResults); // Показываем результаты
+            } catch (error) {
+                console.error('Error searching for movie:', error);
+            }
+        }
+    });
+
+
+    // --- Отображение результатов поиска HDrezka ---
+    async function displaySearchResults(results) {
+        const resultsContainer = document.getElementById('search-results');
+        resultsContainer.innerHTML = ''; // Очищаем
+
+        if (!results || results.length === 0) {
+            resultsContainer.textContent = 'Фильмы не найдены.';
+            return;
+        }
+
+        const ul = document.createElement('ul');
+        results.forEach(movie => {
+            const li = document.createElement('li');
+            li.style.cursor = 'pointer';
+            li.textContent = `${movie.title} (${movie.yearCountry})`;
+
+            const img = document.createElement('img');
+            img.src = movie.posterUrl;
+            img.alt = movie.title;
+            img.style.width = '100px';
+            img.style.height = 'auto';
+            img.style.marginRight = '10px';
+            li.prepend(img);
+            ul.appendChild(li);
+
+            // ---  Добавляем обработчик для ВЫБОРА фильма ---
+            li.addEventListener('click', async () => {
+                try {
+                    const iframeResponse = await authFetch('/rooms/iframe', {
+                        method: 'POST',
+                        body: JSON.stringify({ movie_url: movie.movieUrl }),
+                    });
+                    if (!iframeResponse.ok) {
+                        throw new Error('Failed to get iframe');
+                    }
+                    const iframeData = await iframeResponse.json();
+            
+                     // Вызываем функцию для обновления RoomContent и загрузки видео
+                    await updateContentFromServer(iframeData.iframe_src); // Убедись что здесь!
+            
+            
+                } catch (error) {
+                    console.error('Error getting iframe:', error);
+                }
+            });
+        });
+        resultsContainer.appendChild(ul);
+    }
+
+    async function updateContentFromServer(video_url, playback_position = 0, is_playing = false) {
+        updateError.textContent = "";
+
+        try {
+            const response = await authFetch(`/rooms/${roomId}/content`, {
+                method: 'PUT',
+                body: JSON.stringify({ video_url, is_playing, playback_position })
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update content');
+            }
+
+        } catch (error) {
+            updateError.textContent = error.message;
+            console.error("Error updating content", error);
+        }
+    }
 
 
     async function initializeRoom() {
-        try {
+        // --- Получение данных о комнате ---
+          try {
             const roomDataResponse = await authFetch(`/rooms/${roomId}`);
             const roomData = await roomDataResponse.json();
 
@@ -162,9 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteRoomBtn.style.display = 'block';
                 clearChatBtn.style.display = 'block';
             }
-            if(!isOwner){
-                document.querySelector(".session-settings h2").style.display = "none";
-                document.querySelector(".owner-settiongs").style.display = "none";
+            else{
+              document.querySelector(".session-settings h2").style.display = "none";
+              document.querySelector(".owner-settiongs").style.display = "none";
             }
 
         } catch (error) {
@@ -173,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // --- Получение данных о контенте ---
         try {
             const contentDataResponse = await authFetch(`/rooms/${roomId}/content`);
             if (!contentDataResponse.ok) {
@@ -180,8 +318,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const contentData = await contentDataResponse.json();
 
+            // ---  Определяем источник видео при инициализации ---
             if (contentData.video_url) {
+              if (contentData.video_url.includes('youtube.com')) {
+                currentVideoSource = 'youtube';
+                document.querySelector('[name="video-source"][value="youtube"]').checked = true;
+                playerContainer.style.display = 'block';
+                hdrezkaSearch.style.display = 'none';
                 loadVideo(contentData.video_url, contentData.playback_position, contentData.is_playing);
+            }
+            else
+            {
+              currentVideoSource = 'hdrezka';
+              document.querySelector('[name="video-source"][value="hdrezka"]').checked = true;
+              playerContainer.style.display = 'none';
+              hdrezkaSearch.style.display = 'block';
+               if (isOwner) {
+                 youtubeSettings.style.display = 'none';
+                }
+
+              if(backgroundPlayer) backgroundPlayerContainer.style.display = "none";
+
+              createHdrezaPlayer(contentData.video_url)
+            }
+
             }
             else {
                 if (isOwner) {
@@ -192,74 +352,75 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Failed to fetch content info:", error);
         }
     }
+
     initializeRoom();
     fetchAndDisplayMessages();
 
 
-    // --- ИЗМЕНЕННАЯ функция loadVideo ---
-    function loadVideo(videoUrl, position, shouldPlay) {
-        const videoId = extractVideoId(videoUrl);
-        if (!videoId) {
-            console.error('Invalid YouTube URL');
-            return;
-        }
-
-        // --- Создание ОСНОВНОГО плеера ---
-        if (player && player.getVideoData && player.getVideoData().video_id === videoId) {
-            updatePlayerState(position, shouldPlay, player); // Уже существует, обновляем
-        } else {
-            if (player) {
-                player.destroy(); // Удаляем старый, если есть
-            }
-            player = new YT.Player('player', { // 'player' - ID контейнера для основного плеера
-                videoId: videoId,
-                playerVars: {
-                    'playsinline': 1,
-                    'modestbranding': 1,
-                    'autoplay': 0, //  Автовоспроизведение при *первой* загрузке
-                    'color':"white",
-                },
-                events: {
-                    'onReady': (event) => {
-                        updatePlayerState(position, shouldPlay, event.target); // Обновляем состояние
-                    },
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        // --- Создание ФОНОВОГО плеера ---
-        if (backgroundPlayer && backgroundPlayer.getVideoData && backgroundPlayer.getVideoData().video_id === videoId) {
-            updatePlayerState(position, shouldPlay, backgroundPlayer); // Уже существует
-        } else {
-            if (backgroundPlayer) {
-                backgroundPlayer.destroy();
-            }
-            backgroundPlayer = new YT.Player('background-player', { // 'background-player' - ID контейнера
-                videoId: videoId,
-                playerVars: {
-                    'playsinline': 1,
-                    'modestbranding': 1,
-                    'autoplay': 0,  // Автовоспроизведение при *первой* загрузке
-                    'controls': 0,   // Скрываем элементы управления
-                    'disablekb': 1,  // Отключаем управление с клавиатуры
-                    'fs': 0,        // Отключаем кнопку полного экрана
-                    'loop': 1,      // Зацикливаем
-                    'playlist': videoId, // Чтобы loop работал с одним видео
-                },
-                events: {
-                    'onReady': (event) => {
-                        event.target.mute(); // Выключаем звук!
-                        updatePlayerState(position, shouldPlay, event.target);
-                    },
-                    'onStateChange': onPlayerStateChangeBackground // Можно отдельный обработчик (необязательно)
-                }
-            });
-        }
+    // --- Функция loadVideo (для YouTube) ---
+  function loadVideo(videoUrl, position, shouldPlay) {
+    const videoId = extractVideoId(videoUrl);
+    if (!videoId) {
+        console.error('Invalid YouTube URL');
+        return;
     }
+    if (player && player.getVideoData && player.getVideoData().video_id === videoId) {
+        updatePlayerState(position, shouldPlay, player); // Уже существует, обновляем
+    } else {
+        if (player) {
+            player.destroy(); // Удаляем старый, если есть
+        }
+        player = new YT.Player('player', {
+            videoId: videoId,
+            playerVars: {
+                'playsinline': 1,
+                'modestbranding': 1,
+                'autoplay': shouldPlay ? 1 : 0,
+                'color':"white",
+            },
+            events: {
+                'onReady': (event) => {
+                    updatePlayerState(position, shouldPlay, event.target); // Обновляем состояние
+                },
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    if (backgroundPlayer && backgroundPlayer.getVideoData && backgroundPlayer.getVideoData().video_id === videoId) {
+        updatePlayerState(position, shouldPlay, backgroundPlayer); // Уже существует
+    } else {
+        if (backgroundPlayer) {
+            backgroundPlayer.destroy();
+        }
+
+        backgroundPlayer = new YT.Player('background-player', {
+            videoId: videoId,
+            playerVars: {
+                'playsinline': 1,
+                'modestbranding': 1,
+                'autoplay': shouldPlay ? 1 : 0,
+                'controls': 0,
+                'disablekb': 1,
+                'fs': 0,
+                'loop': 1,
+                'playlist': videoId, // loop
+            },
+            events: {
+                'onReady': (event) => {
+                    event.target.mute();
+                    updatePlayerState(position, shouldPlay, event.target);
+                },
+                'onStateChange': onPlayerStateChangeBackground
+            }
+        });
+    }
+}
 
 
     function updatePlayerState(position, shouldPlay, playerInstance) {
+        if(!playerInstance) return;
+
         if (shouldPlay) {
             if (playerInstance.getPlayerState() !== YT.PlayerState.PLAYING) {
                 playerInstance.playVideo();
@@ -278,23 +439,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Обработчик изменений состояния ОСНОВНОГО плеера (без изменений) ---
     function onPlayerStateChange(event) {
-        if (isOwner) {
-            const currentTime = player.getCurrentTime();
-            const now = Date.now();
+         if(!isOwner) return;
 
-            if (event.data === YT.PlayerState.PLAYING ||
-                event.data === YT.PlayerState.PAUSED ||
-                event.data === YT.PlayerState.BUFFERING ||
-                event.data === YT.PlayerState.ENDED ||
-                (now - lastSentTime > SYNC_INTERVAL)) {
+        const currentTime = player.getCurrentTime();
+        const now = Date.now();
 
-                updateContent();
+        if (event.data === YT.PlayerState.PLAYING ||
+            event.data === YT.PlayerState.PAUSED ||
+            event.data === YT.PlayerState.BUFFERING ||
+            event.data === YT.PlayerState.ENDED ||
+            (now - lastSentTime > SYNC_INTERVAL))
+            {
+               if (currentVideoSource === "youtube")
+               {
+                  updateContent(false);
+               }
                 lastSentTime = now;
             }
-        }
     }
 
-    // --- (Необязательно) Обработчик изменений состояния ФОНОВОГО плеера ---
     function onPlayerStateChangeBackground(event) {
       //Пока оставим пустым.
     }
@@ -304,6 +467,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(new URL(url).search);
         return urlParams.get('v');
     }
+
+  // --- Функции для iframe (HDrezka) ---
+
+    function createHdrezaPlayer(iframeSrc) {
+        destroyHdrezaPlayer(); // Удаляем, если уже есть
+
+        iframe = document.createElement('iframe');
+        iframe.src = iframeSrc;
+        iframe.width = '100%';
+        iframe.height = '100%';
+        iframe.allowFullscreen = true;
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = "6px";
+        // Добавляем стили (убедись, что они здесь)
+        iframe.style.zIndex = '99';
+        iframe.style.position = 'relative';
+
+        // Важно:  Добавляем iframe *внутрь* playerContainer!
+        document.getElementById('player-container').appendChild(iframe);
+        playerContainer.style.display = 'block'; // Убеждаемся что контейнер виден
+
+    }
+
+
+    function destroyHdrezaPlayer(){
+    if(iframe){
+        iframe.remove();
+        iframe = null;
+    }
+    }
+
+
+    // --- Функции для сообщений ---
 
     sendMessageBtn.addEventListener('click', async () => {
         const messageText = messageInput.value.trim();
@@ -324,8 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-     async function fetchAndDisplayMessages() {
+    async function fetchAndDisplayMessages() {
         try {
             const response = await authFetch(`/rooms/${roomId}/messages`);
             const data = await response.json();
@@ -344,8 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching messages:', error);
         }
     }
-
-    function displayMessages(messages, isInitialLoad) {
+     function displayMessages(messages, isInitialLoad) {
         let currentDate = null;
 
         if (!isInitialLoad) {
@@ -431,8 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-
     function toggleOptionsMenu(button, messageId, messageContainer, currentText) {
         const optionsMenu = button.nextElementSibling;
 
@@ -474,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function createEditInterface(messageContainer, messageId, currentText) {
+     function createEditInterface(messageContainer, messageId, currentText) {
         const messageContent = messageContainer.querySelector('.message-content');
         const textSpan = messageContent.querySelector('.message-text');
         const controlsDiv = messageContainer.querySelector('.message-controls');
@@ -534,7 +726,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     async function deleteMessage(messageId, messageContainer) {
 
         try {
@@ -552,6 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     }
+    // --- Кнопки управления комнатой ---
 
     deleteRoomBtn.addEventListener('click', async () => {
         showConfirmationModal('Are you sure you want to delete this room?', async () => {
@@ -576,13 +768,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
+    // --- Обновление контента (YouTube) ---
     updateContentBtn.addEventListener('click', () => {
-        if (isOwner) {
+        if (isOwner && currentVideoSource === 'youtube') {
             updateContent(true);
         }
     });
-
-
 
     async function updateContent(isInitialSet = false) {
         updateError.textContent = "";
@@ -639,22 +830,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Получение обновлений контента ---
     async function getContentUpdates() {
         if (!roomId) return;
 
         try {
             const response = await authFetch(`/rooms/${roomId}/content`);
             const data = await response.json();
+            let shouldLoad = false;
 
-            if (!lastContentUpdate ||
-                data.video_url !== lastContentUpdate.video_url ||
-                data.is_playing !== lastContentUpdate.is_playing ||
-                Math.abs(data.playback_position - lastContentUpdate.playback_position) > 1) {
+            if (!lastContentUpdate) {
+                shouldLoad = true;
+            } else if (data.video_url !== lastContentUpdate.video_url) {
+                shouldLoad = true;
+            } else if (currentVideoSource === 'youtube') {
+                if (data.is_playing !== lastContentUpdate.is_playing ||
+                    Math.abs(data.playback_position - lastContentUpdate.playback_position) > 1) {
+                    shouldLoad = true;
+                }
+            }
 
+            if (shouldLoad) {
                 lastContentUpdate = data;
-
                 if (data.video_url) {
-                    loadVideo(data.video_url, data.playback_position, data.is_playing);
+                    if (data.video_url.includes('youtube.com')) {
+                        if (currentVideoSource !== 'youtube') {
+                            currentVideoSource = 'youtube';
+                            document.querySelector('[name="video-source"][value="youtube"]').checked = true;
+                            playerContainer.style.display = 'block';
+                            hdrezkaSearch.style.display = 'none';
+                            if(backgroundPlayer){
+                              backgroundPlayerContainer.style.display = "block";
+                            }
+                            destroyHdrezaPlayer(); // Удаляем плеер
+                        }
+                        loadVideo(data.video_url, data.playback_position, data.is_playing);
+                    }
+                    else {
+                         if (currentVideoSource !== 'hdrezka') {
+                            currentVideoSource = 'hdrezka';
+                            document.querySelector('[name="video-source"][value="hdrezka"]').checked = true;
+                            playerContainer.style.display = 'none';
+                            hdrezkaSearch.style.display = 'block';
+                            if(backgroundPlayer) backgroundPlayerContainer.style.display = "none"; // скрываем
+                            youtubeSettings.style.display = 'none';
+                             if (player) {
+                                player.stopVideo(); // Останавилваем плеер
+                            }
+
+                        }
+                        createHdrezaPlayer(data.video_url); // Создаем плеер
+                    }
+                } else {
+                    // No video URL, potentially clear the player
+                    if (currentVideoSource === 'youtube' && player) {
+                        player.stopVideo();
+                    } else if (currentVideoSource === 'hdrezka') {
+                       destroyHdrezaPlayer();
+                    }
                 }
             }
 
