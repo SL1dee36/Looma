@@ -6,8 +6,6 @@
     <title>Session</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/session.css">
-    <!-- <link rel="stylesheet" href="css/active-sessions.css">  Если создашь отдельные CSS файлы -->
-    <!-- <link rel="stylesheet" href="css/my-sessions.css"> -->
 </head>
 <body>
     <header>
@@ -17,11 +15,11 @@
             <div class="dropdown-content" id="dropdown-content">
                 <a href="#" id="active-sessions-link">Active Sessions</a>
                 <div class="active-sessions-panel" style="display: none;">
-                    <!-- Список активных сессий будет здесь -->
+                    <!-- Список активных сессий -->
                 </div>
                 <a href="#" id="my-sessions-link">My Sessions</a>
                   <div class="my-sessions-panel" style="display: none;">
-                    <!-- Список сессий пользователя будет здесь -->
+                    <!-- Список сессий пользователя -->
                 </div>
                 <a href="#" id="logout-link">Logout</a>
             </div>
@@ -30,13 +28,15 @@
 
     <main>
         <div class="video-player-container">
-            <div id="player"></div> <!-- YouTube player will go here -->
+            <div id="player"></div> <!-- Основной плеер -->
+            
         </div>
+        <div id="backfill"></div>
+        <div id="background-player"></div> <!-- Фоновый плеер -->
         <div class="content-area">
             <div class="chat-container">
-                <h2>Chat</h2>
                 <div id="chat-messages">
-                    <!-- Messages will be added here -->
+                    <!-- Сообщения -->
                 </div>
                 <div class="board">
                     <input type="text" id="message-input" placeholder="Type your message...">
@@ -49,25 +49,22 @@
             </div>
 
             <div class="session-settings">
-                <div class="owner-settiongs">
+              <div class="owner-settiongs">
                 <h2>Session Settings (Owner Only)</h2>
                     <!-- Video URL input -->
                     <div>
                         <label for="video-url">Video URL:</label>
                         <input type="text" id="video-url" placeholder="Enter YouTube URL">
                     </div>
-                    <!-- REMOVE:  isPlaying checkbox -->
-                    <!-- REMOVE: Playback Position input -->
-
-                    <button id="update-content-btn">Set Initial Video</button> <!--  Keep this button -->
-                </div>
+                <button id="update-content-btn">Set Initial Video</button>
+              </div>
                 <p class="error-message" id = "update-content-error-message"></p>
-                 <div id="room-info">
-                    <p>Room Code: <span id="room-code"></span></p>
-                    <p>Owner: <span id="room-owner"></span></p>
-                 </div>
-                <button id="leave-room-btn">Leave Room</button>
-                <button id="delete-room-btn">Delete Room</button> <!-- Only visible to owner -->
+                <div id="room-info">
+                   <p>Room Code: <span id="room-code"></span></p>
+                   <p>Owner: <span id="room-owner"></span></p>
+                </div>
+               <button id="leave-room-btn">Leave Room</button>
+               <button id="delete-room-btn">Delete Room</button>
             </div>
         </div>
     </main>
@@ -76,7 +73,7 @@
         <p>© 2025 CineSync. All rights reserved.</p>
     </footer>
 
-    <div id="custom-modal" class="modal">
+     <div id="custom-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal-btn">×</span>
             <p id="modal-text"></p>
@@ -87,8 +84,9 @@
         </div>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script> <!-- YouTube API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="js/utils.js"></script>
     <script src="js/session.js"></script>
+    <!-- <script src="js/ambient.js"></script> -->
 </body>
 </html>

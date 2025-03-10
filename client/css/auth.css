@@ -1,7 +1,11 @@
-/* --- START OF FILE css/auth.css --- */
+/* ---  css/auth.css --- */
+
 body {
-    background-color: #121212; /* Dark background */
-    color: #e0e0e0;     /* Light text */
+    background-color: #121212;
+    color: #e0e0e0;
+    margin: 0;
+    overflow: hidden;  /*  VERY IMPORTANT: Prevent scrollbars from the animation */
+    font-family: sans-serif; /* Added for consistency */
 }
 
 .container {
@@ -9,65 +13,97 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 20px; /* Space between boxes */
+    flex-wrap: wrap;
+    gap: 20px;
+    position: relative; /*  Important for z-index to work */
+    z-index: 2;        /*  Place content ABOVE the background */
+}
+
+.auth-container {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    border-radius: 16px;
+    border: 1px solid #444;
+    background-color: rgba(30, 30, 30, 0.3); /*  Slightly more readable */
+    z-index: 3;       /*  Even higher z-index for the form itself */
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+}
+
+@media screen and (max-width: 1001px) {
+    .auth-container {
+        flex-direction: column !important;
+    }
 }
 
 .auth-box {
-    border: 1px solid #333; /* Darker border */
     padding: 20px;
-    border-radius: 5px;
-    width: 300px; /* Fixed width */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Darker shadow */
-    background-color: #1e1e1e; /* Dark background for box */
-    height: 320px;
+    width: 300px;
+    position: relative;
+    z-index: 2;
 }
 
 .auth-box h2 {
     text-align: center;
     margin-bottom: 20px;
-    color: #e0e0e0; /* Ensure heading text is light */
+    color: #e0e0e0;
 }
 
 .auth-box input[type="text"],
 .auth-box input[type="email"],
 .auth-box input[type="password"] {
+    outline: none !important;
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    border: 1px solid #555; /* Darker border */
+    border: 1px solid #555;
     border-radius: 4px;
-    box-sizing: border-box; /* Include padding in width */
-    background-color: #333; /* Dark background for inputs */
-    color: #eee;          /* Light text for input */
+    box-sizing: border-box;
+    background-color: rgba(51, 51, 51, 0.19); /*  Slight transparency */
+    color: #eee;
 }
 
 .auth-box input[type="text"]:focus,
 .auth-box input[type="email"]:focus,
 .auth-box input[type="password"]:focus {
-    outline: none;
-    border-color: #4CAF50; /* Highlight on focus (same as button) */
+    outline: none !important;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease; /* Smooth transitions */
+    border: 1px solid #fe4f98;
+    border-radius: 4px;
+    border-image: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%) 1;
+    border-image-slice: 1; /* Important for correct scaling */
 }
 
 .auth-box button {
     width: 100%;
     padding: 10px;
-    background-color: #4CAF50; /* Keep the green button */
+
+    transition: all 0.4s ease;
+    background: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%); 
+    background-size: 400% 100%;
+    background-position: 100% 50%;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease; /* Smooth transition for hover */
+    outline: none !important;
 }
 
 .auth-box button:hover {
-    background-color: #388e3c; /* Darker green on hover */
+    transition: all 0.4s ease;
+    background-position: 0% 50%;
+    outline: none !important;
+}
+
+.auth-box button:focus {
+    transition: all 0.25s ease;
+    background-position: 0% 50%;
+    outline: none !important;
 }
 
 .error-message {
-    color: #f44336; /* Red color for error, but a slightly brighter shade */
+    color: #f44336;
     text-align: center;
     margin-top: 10px;
 }
-
-/* --- END OF FILE css/auth.css --- */

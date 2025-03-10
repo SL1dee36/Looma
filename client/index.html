@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineSync</title>
+
+    <link rel="icon" href="css/sync-logo.svg" type="image/svg+xml">
+    <link rel="icon" href="css/sync-logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="css/sync-logo.png">  <!-- Для устройств Apple -->
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
@@ -44,11 +49,16 @@
         </div>
     </main>
 
+    <div class="background" style="z-index: -1 !important;">
+        <!--  Circles will be created here  -->
+    </div>
+
     <footer>
         <p>© 2025 CineSync. All rights reserved.</p>
     </footer>
 
     <script src="js/utils.js"></script>
     <script src="js/index.js"></script>
+    <script src="js/ambient.js"></script>
 </body>
 </html>

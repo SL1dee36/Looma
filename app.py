@@ -8,7 +8,9 @@ from flask_cors import CORS
 from models import Room, User, Message, RoomContent
 from schemas import UserSchema, RoomSchema, MessageSchema, RoomContentSchema
 from marshmallow import ValidationError
-
+from bs4 import BeautifulSoup  # Добавляем BeautifulSoup
+# В начале app.py:
+from hdrezka_parser import search_hdrezka, get_iframe_src
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -324,6 +326,45 @@ def create_app(config_class=Config):
             return jsonify({'message': 'Room content updated successfully'}), 200
 
     app.register_blueprint(rooms_bp)
+
+
+    # --- Добавляем эндпоинт для поиска фильмов ---
+    @rooms_bp.route('/search', methods=['POST'])
+    @token_required
+    def search_movies():
+        """Ищет фильмы на hdrezka.pro по названию."""
+        data = request.get_json()
+        if not data or 'title' not in data:
+            return jsonify({'message': 'Missing title field'}), 400
+
+        title = data['title']
+        try:
+            search_results = search_hdrezka(title)  # Используем функцию-парсер
+            if not search_results:
+                return jsonify({'message': 'No movies found'}), 404
+            return jsonify(search_results), 200
+        except Exception as e:
+            return jsonify({'message': 'Search failed', 'error': str(e)}), 500
+
+
+    # --- Добавляем эндпоинт для получения ссылки на iframe ---
+    @rooms_bp.route('/iframe', methods=['POST'])
+    @token_required  # Защищаем токеном
+    def get_iframe():
+        """Получает ссылку на iframe по URL страницы фильма на hdrezka."""
+        data = request.get_json()
+        if not data or 'movie_url' not in data:
+            return jsonify({'message': 'Missing movie_url field'}), 400
+
+        movie_url = data['movie_url']
+        try:
+            iframe_src = get_iframe_src(movie_url)  # Используем функцию-парсер
+            if iframe_src:
+                return jsonify({'iframe_src': iframe_src}), 200
+            else:
+                return jsonify({'message': 'Iframe not found'}), 404
+        except Exception as e:
+            return jsonify({'message': 'Failed to get iframe', 'error': str(e)}), 500
 
     CORS(app)  # This is important!
 

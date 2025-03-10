@@ -170,6 +170,62 @@ header {
 
 .show {
     display: block;
+    z-index: 999;
+}
+
+/* --- Background Styles --- */
+
+.background {
+    position: fixed; /*  Crucial: Keeps it in the background, regardless of scrolling */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;       /*  Place behind the main content */
+    overflow: hidden;  /*  Prevent any overflow from the circles */
+    background-color: #000;
+}
+
+.background .circle {
+    position: absolute;  /*  Absolute positioning within the .background */
+    border-radius: 50%;
+    mix-blend-mode: screen;  /*  Better blending mode for this effect */
+    animation: moveAndScale 20s infinite ease-in-out;  /*  Apply the animation */
+    opacity: 0;            /*  Start invisible for fade-in */
+
+    filter: blur(100px);
+    position: absolute;
+    top: 50vh;
+    left: 50vw;
+}
+
+/*  Keyframes for animation -  SIMPLIFIED and IMPROVED  */
+@keyframes moveAndScale {
+    0%, 100% {
+        transform: translate(var(--x), var(--y)) scale(var(--scale));
+        opacity: 0;
+    }
+    50% {
+      opacity: 0.7;
+    }
+    20%, 80% {
+        /* Add a bit more opacity in the middle */
+        opacity: 0.4; /*  Adjust as desired */
+    }
+}
+
+/* --- Noise Effect --- */
+.background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.15; /*  Adjust noise visibility */
+    pointer-events: none; /*  Make the noise layer non-interactive */
+    z-index: 5;
 }
 
 footer {
