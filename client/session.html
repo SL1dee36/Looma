@@ -27,16 +27,6 @@
     </header>
 
     <main>
-        <!-- Переключатель источника видео -->
-        <div class="video-source-switcher">
-            <label>
-                <input type="radio" name="video-source" value="youtube" checked> YouTube
-            </label>
-            <label>
-                <input type="radio" name="video-source" value="hdrezka"> HDrezka
-            </label>
-        </div>
-
         <!-- Контейнер для плееров (YouTube и iframe) -->
         <div class="video-player-container">
           <div id="player-container">
@@ -66,6 +56,16 @@
             <div class="session-settings">
               <div class="owner-settiongs">
                 <h2>Session Settings (Owner Only)</h2>
+
+                <!-- Переключатель источника видео -->
+                <div class="video-source-switcher">
+                    <label>
+                        <input class="vss" type="radio" name="video-source" value="youtube" checked> YouTube
+                    </label>
+                    <label>
+                        <input class="vss" type="radio" name="video-source" value="hdrezka"> HDrezka
+                    </label>
+                </div>
 
                 <div id="hdrezka-search" style="display: none;">  <!-- Скрыт изначально -->
                     <input type="text" id="movie-title" placeholder="Название фильма">
