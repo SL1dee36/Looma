@@ -31,6 +31,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Get the elements
+    const loginBox = document.getElementById('login-box');
+    const registerBox = document.getElementById('register-box');
+    const showRegisterBtn = document.getElementById('show-register');
+    const showLoginBtn = document.getElementById('show-login');
+
+    // Event listeners to toggle visibility
+    showRegisterBtn.addEventListener('click', () => {
+        loginBox.style.display = 'none';
+        registerBox.style.display = 'block';
+    });
+
+    showLoginBtn.addEventListener('click', () => {
+        registerBox.style.display = 'none';
+        loginBox.style.display = 'block';
+    });
+
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         registerError.textContent = '';

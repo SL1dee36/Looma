@@ -1,4 +1,4 @@
-# --- START OF FILE app.py ---
+# --- app.py ---
 import os
 from flask import Blueprint, Flask, jsonify, request, g, send_from_directory
 from config import Config
@@ -8,9 +8,10 @@ from flask_cors import CORS
 from models import Room, User, Message, RoomContent
 from schemas import UserSchema, RoomSchema, MessageSchema, RoomContentSchema
 from marshmallow import ValidationError
-from bs4 import BeautifulSoup  # Добавляем BeautifulSoup
-# В начале app.py:
+import requests
+from bs4 import BeautifulSoup
 from hdrezka_parser import search_hdrezka, get_iframe_src
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -325,10 +326,7 @@ def create_app(config_class=Config):
             db.session.commit()
             return jsonify({'message': 'Room content updated successfully'}), 200
 
-    app.register_blueprint(rooms_bp)
-
-
-    # --- Добавляем эндпоинт для поиска фильмов ---
+      # --- Добавляем эндпоинт для поиска фильмов ---
     @rooms_bp.route('/search', methods=['POST'])
     @token_required
     def search_movies():
@@ -366,6 +364,20 @@ def create_app(config_class=Config):
         except Exception as e:
             return jsonify({'message': 'Failed to get iframe', 'error': str(e)}), 500
 
+    @rooms_bp.route('/<int:room_id>/users', methods=['GET'])
+    @token_required
+    def get_room_users(room_id):
+        """Retrieves a list of users currently in the specified room."""
+        room = Room.query.get_or_404(room_id)
+
+        if g.current_user not in room.users:
+            return jsonify({'message': 'You are not in this room'}), 403
+
+        user_schema = UserSchema(many=True, only=('id', 'username'))  # Only include id and username
+        result = user_schema.dump(room.users)
+        return jsonify({'users': result}), 200
+
+    # --- (Остальной код app.py, включая CORS и т.д.) ---
     CORS(app)  # This is important!
 
     @app.after_request
@@ -379,20 +391,18 @@ def create_app(config_class=Config):
     def index():
         return send_from_directory('client', 'index.html')
 
-
-    # Serve static files (HTML, CSS, JS)
     @app.route('/<path:path>')
     def serve_static(path):
         return send_from_directory('client', path)
 
-
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()
-        return jsonify({'message':'An unexpected error occurred'}), 500
+        return jsonify({'message': 'An unexpected error occurred'}), 500
+
+    app.register_blueprint(rooms_bp)
     return app
 
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True)
-# --- END OF FILE app.py ---

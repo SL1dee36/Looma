@@ -1,3 +1,5 @@
+/* --- session.css --- */
+
 body {
     background-color: #121212; /* Dark background */
     color: #e0e0e0; /* Light text */
@@ -35,13 +37,13 @@ main {
 
 .video-player-container {
     width: -webkit-fill-available;
-    position: relative; /* Очень важно! */
+    position: relative;
     margin-bottom: 20px;
     height: 60vh;
     background-color: #000;
     border-radius: 6px;
     border: 1px solid #333;
-    overflow: hidden; /* Очень важно! */
+    overflow: hidden;
 }
 
 /* Стили для ОСНОВНОГО плеера */
@@ -149,7 +151,7 @@ main {
 #chat-messages {
     flex-grow: 1;
     max-height: 50vh;
-    min-height: 10vh;
+    min-height: 30vh;
     height: -webkit-fill-available;
     overflow-y: auto;
     padding: 5px;
@@ -308,7 +310,7 @@ main {
 }
 
 .message-text {
-    word-wrap: break-word;
+    word-break: break-word;
     color: #ccc; /* Slightly darker than username */
     margin-right: 5px;
 }
@@ -317,7 +319,7 @@ main {
     color: #aaa;
     font-size: 0.8em;
     display: flex;
-    flex-direction: row;
+    flex-direction: row-reverse;
 }
 
 /* --- Message Controls (Options Menu) --- */
@@ -510,13 +512,193 @@ main {
 #online-users-list {
     list-style: none;
     padding: 0;
+    padding-bottom: 5px;
     margin: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #444 #00000000;
 }
 
-#online-users-list li {
-    padding: 5px 0;
-    border-bottom: 1px solid #444;
+.online-user-item { /* Style for each user item */
+    display: flex;
+    /* padding: 0px 10px; */
+    gap: 10px;
+    /* border-bottom: 1px solid #444; */
+    flex-direction: column;
+    align-items: center;
+    padding-inline: 5px;
+    /* width: 60px; */
 }
-#online-users-list li:last-child {
-    border-bottom: none; /* No border on the last item */
+
+.online-user-item:last-child{
+  border-bottom: none;
+}
+
+.online-user-avatar { /* Style for the avatar */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    line-height: 50px;
+    /* margin-right: 10px; */
+    flex-shrink: 0;
+    font-size: 25px;
+}
+
+.online-user-username{
+  color:#fff;
+}
+/* Переключатель источника видео */
+.video-source-switcher {
+    display: flex;
+    gap: 10px;
+    border-radius: 16px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+}
+/* 
+.video-source-switcher label {
+    cursor: pointer;
+    color: #fff;
+    text-align: center;
+} */
+
+.video-source-switcher label {
+  display: inline-flex;
+  align-items: center;
+  column-gap: 4px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.video-source-switcher label:not(:last-of-type) {
+  margin-right: 16px;
+}
+
+.vss {
+  appearance: none;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #444444;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 0px;
+}
+
+.vss:checked {
+  background-color: #1e1e1e;
+  background: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%); 
+  background-size: 400% 100%;
+  background-position: 100% 50%;
+  transition: background-position 0.45s ease;
+}
+
+.vss:checked:hover {
+    transition: all 0.25s ease;
+    background-position: 0% 50%;
+}
+
+
+.vss:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 10px;
+  height: 10px;
+  margin: auto;
+  border-radius: 16px;
+  background-color: transparent;
+}
+
+#background-player-container{
+    position: absolute;
+     top: -12%;
+     left: -20px;
+     width: 100vw;
+     height: 100vh;
+     filter: blur(60px) brightness(0.5);
+     z-index: -2;
+     pointer-events: none;
+}
+
+#player-container{
+      position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#player-container, #hdrezka-search {
+    border-radius: 6px;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* --- Search Modal Styles --- */
+.close-search-modal-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 16px;
+    width: 16px;
+    display: flex;
+    position: relative;
+    z-index: 9999;
+}
+
+.close-search-modal-btn:hover,
+.close-search-modal-btn:focus {
+    color: #eee;
+    text-decoration: none;
+}
+
+/* --- Search Results Styles --- */
+#search-results {
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #444 #00000000;
+}
+
+#search-results ul{
+    margin: 0;
+    padding: 5px;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+}
+
+#search-results li {
+    display: flex;
+    margin: 5px;
+    flex-direction: column;
+    padding-inline: 10px;
+    align-items: center;
+    list-style: none;
+    padding: 10px;
+}
+
+#search-results li:last-child {
+    border-bottom: none; /* No separator for the last item */
+}
+
+#search-results li img {
+    margin-bottom: 5px; /* Space below the image */
 }

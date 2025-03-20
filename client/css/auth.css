@@ -19,6 +19,20 @@ body {
     z-index: 2;        /*  Place content ABOVE the background */
 }
 
+.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    transition: all 0.3s ease-in-out;
+}
+
+.show:hover {
+    transition: all 0.3s ease-in-out;
+    color: #fe4f98;
+    cursor: pointer;
+}
+
 .auth-container {
     display: flex;
     flex-direction: row;
