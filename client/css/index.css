@@ -5,64 +5,60 @@ body {
 }
 
 main {
-    display: flex;
-    justify-content: center;
+    flex-grow: 1;
+    height: auto;
     align-items: center;
-    flex-grow: 1;  /* Allow main to take up remaining space */
-    padding: 20px;
-    height: 100vh;
 }
 
+/* Styles for the combined Join/Create box */
 .room-options {
-    display: flex;
-    flex-wrap: wrap; /* Wrap on smaller screens */
-    gap: 20px;
-    justify-content: center;
-    
-    padding: 10px;
-    border-radius: 16px;
-    border: 1px solid #555;
-    background-color: rgba(30, 30, 30, 0.3);
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #444;
+    background-color: rgba(30, 30, 30, 0.5);
+    box-sizing: border-box;
 }
 
 .room-option {
-    padding: 20px;
-    width: 300px;
+    /* No specific width needed now, container controls it */
     text-align: center;
 }
 
 .room-option h2 {
     margin-bottom: 15px;
-    color: #e0e0e0; /* Ensure heading text is light */
+    color: #e0e0e0;
+    font-size: 1.3em;
 }
 
 .room-option input[type="text"],
-.room-option input[type="number"] {
+.room-option input[type="number"] { /* Keep number selector just in case */
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #555;
     border-radius: 4px;
     box-sizing: border-box;
-    background-color: rgba(51, 51, 51, 0.19); /*  Slight transparency */
+    background-color: rgba(51, 51, 51, 0.4);
     color: #eee;
 }
 
 .room-option input[type="text"]:focus,
 .room-option input[type="number"]:focus {
     outline: none;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease; /* Smooth transitions */
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
     border: 1px solid #fe4f98;
     border-radius: 4px;
     border-image: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%) 1;
-    border-image-slice: 1; /* Important for correct scaling */
+    border-image-slice: 1;
 }
 
 .room-option button {
     width: 100%;
-    padding: 10px;
-    transition: all 0.4s ease;
-    background: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%); 
+    padding: 10px 15px;
+    transition: all 0.5s ease;
+    background: linear-gradient(145deg, #fe4f98 0%, #ff4ff6, #2937ff 50%, #68afff 100%);
     background-size: 400% 100%;
     background-position: 100% 50%;
     color: white;
@@ -70,12 +66,198 @@ main {
     border-radius: 4px;
     cursor: pointer;
     outline: none !important;
+    margin-top: 5px; /* Reduced top margin */
+    margin-bottom: 5px; /* Added bottom margin */
+    font-size: 1em;
 }
 
+/* Specific margin for create button if needed after the divider */
+#quick-create-room-btn {
+    margin-top: 15px; /* Add space above create button */
+}
+
+
 .room-option button:hover {
-    transition: all 0.4s ease;
+    transition: all 0.5s ease;
     background-position: 0% 50%;
     outline: none !important;
 }
 
+.error-message {
+    color: #ff4d4d;
+    font-size: 0.9em;
+    min-height: 1.2em;
+    margin-top: 2px; /* Reduced margin */
+    margin-bottom: 8px; /* Add margin below error */
+    text-align: left; /* Align error text left */
+
+    align-items: center;
+    justify-content: center;
+}
+
+/* Optional Divider Style */
+.option-divider {
+    border: none;
+    height: 1px;
+    background-color: #444;
+    margin: 15px 0; /* Space around divider */
+}
+
+
+/* Styles for the Room Options List (Tabs and Table) */
+.room-options-list {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #444;
+    background-color: rgba(30, 30, 30, 0.5);
+    box-sizing: border-box;
+}
+
+.tab-controls {
+    display: flex;
+    border-bottom: 1px solid #555;
+    margin-bottom: 15px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: #aaa;
+    font-size: 1em;
+    border-bottom: 3px solid transparent;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    margin-bottom: -1px;
+}
+
+.tab-button:hover {
+    color: #eee;
+}
+
+.tab-button.active {
+    color: #fe4f98;
+    border-bottom-color: #fe4f98;
+    font-weight: bold;
+}
+
+.tab-content-area {
+    max-height: 210px;
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+.room-box {
+    margin-top: 10vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* Table-like structure styling */
+.sessions-list-header,
+.session-row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.sessions-list-header {
+    font-weight: bold;
+    color: #ccc;
+    background-color: rgba(40, 40, 40, 0.3);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom: 1px solid #555;
+}
+
+/* Column widths/flex */
+.sessions-list-header span:nth-child(1),
+.session-row-item span:nth-child(1) { /* Session Name */
+    flex-basis: 45%;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sessions-list-header span:nth-child(2),
+.session-row-item span:nth-child(2) { /* Online */
+    flex-basis: 20%;
+    text-align: center;
+}
+
+.sessions-list-header span:nth-child(3),
+.session-row-item > div { /* Action (contains button) */
+    flex-basis: 30%;
+    text-align: right;
+}
+
+.session-row-item:last-child {
+    border-bottom: none;
+}
+
+.session-row-item span {
+    color: #e0e0e0;
+}
+
+.session-row-item button {
+    padding: 5px 15px;
+    font-size: 0.9em;
+    background: linear-gradient(145deg, #5a8aff 0%, #4776ff 50%, #68afff 100%); /* Adjusted gradient maybe? */
+    background-size: 400% 100%;
+    background-position: 100% 50%;
+    min-width: 70px;
+    margin: 0;
+    /* Ensure hover uses the correct gradient */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none !important;
+    transition: all 0.5s ease; /* Re-add transition */
+}
+.session-row-item button:hover {
+     background-position: 0% 50%;
+}
+
+.no-sessions-message {
+    text-align: center;
+    padding: 20px;
+    color: #aaa;
+    font-style: italic;
+}
+
+.room-box {
+    padding-inline: 10px !important;
+}
+
+@media screen and (max-width: 500px) {
+    .room-options,.room-options-list {
+        max-width: none !important;
+        min-width: none !important;
+    }
+    
+}
+
+@media screen and (max-width: 891px) and (min-width: 500px) {
+    .room-options, 
+    .room-options-list {
+        min-width: 500px !important;
+    }
+}
 /* --- END OF FILE css/index.css --- */

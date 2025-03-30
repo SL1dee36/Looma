@@ -1,6 +1,43 @@
 /* --- START OF FILE css/style.css --- */
+@import url('https://fonts.googleapis.com/css2?family=Limelight&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
+.limelight-regular {
+    font-family: "Limelight", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.roboto-flex{
+  font-family: "Roboto Flex", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "slnt" 0,
+    "wdth" 100,
+    "GRAD" 0,
+    "XOPQ" 96,
+    "XTRA" 468,
+    "YOPQ" 79,
+    "YTAS" 750,
+    "YTDE" -203,
+    "YTFI" 738,
+    "YTLC" 514,
+    "YTUC" 712;
+}
+
+/* button {
+    font-family: "Limelight", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+} */
+
 body {
-    font-family: sans-serif;
+    font-family: "Roboto Flex", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 470;
+    font-style: normal;
+
+    font-size: large;
     margin: 0;
     padding: 0;
     display: flex;
@@ -14,18 +51,28 @@ body {
 }
 
 header {
+    background-color: #1e1e1e80;
+    border: 1px solid #555;
     color: white;
-    background-color: #30303030;
+    border-radius: 100vw;
+    margin: 10px;
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #555;
 }
 
 .logo {
     font-size: 1.5em;
     font-weight: bold;
+    
+}
+
+.logo a, 
+.logo span {
+    font-family: "Limelight", sans-serif;
+    font-weight: 400;
+    font-style: normal;
 }
 
 #logo-link {
@@ -47,24 +94,13 @@ header {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    transition: background-position 0.25s ease;
+    transition: background-position 0.5s ease;
 }
 
 #logo-link:hover .sync-part {
-    transition: background-position 0.25s ease;
+    transition: background-position 0.5s ease;
     background-position: 0% 50%;
 }
-
-/* #logo-link:active {
-    transition: background-position 0.25s ease;
-    background: linear-gradient(90deg, #fe4f98 0%, #754ffe 50%, #3d98ff 100%); 
-    background-size: 400% 100%;
-    background-position: 0% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    transition: background-position 0.25s ease;
-} */
 
 .user-profile {
     position: relative;
@@ -73,6 +109,12 @@ header {
 }
 
 .user-icon {
+
+    font-family: "Limelight", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: x-large;
+
     width: 30px;
     height: 30px;
     background-color: #444;
@@ -229,11 +271,10 @@ header {
 }
 
 footer {
-    background-color: #30303030;
-    color: white;
+    color: #ffffff50;
+    font-size: small;
     text-align: center;
-    padding: 0px;
+    padding: 10px;
     margin-top: auto;
-    border-top: 1px solid #555;
 }
 /* --- END OF FILE css/style.css --- */

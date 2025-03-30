@@ -150,7 +150,7 @@ main {
 
 #chat-messages {
     flex-grow: 1;
-    max-height: 50vh;
+    max-height: 58vh;
     min-height: 30vh;
     height: -webkit-fill-available;
     overflow-y: auto;
