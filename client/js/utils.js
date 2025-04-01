@@ -2,8 +2,8 @@
 
 // Determine the base URL for API calls
 const API_BASE_URL = window.location.protocol === "file:"
-    ? "https://g0tqrn67-5000.euw.devtunnels.ms"  // Local development (USE YOUR DESIRED LOCAL URL!)
-    : "https://g0tqrn67-5000.euw.devtunnels.ms"; // Use relative URLs when deployed or through the tunnel
+    ? "https://226tjfwl-5000.euw.devtunnels.ms"  // Local development (USE YOUR DESIRED LOCAL URL!)
+    : "https://226tjfwl-5000.euw.devtunnels.ms"; // Use relative URLs when deployed or through the tunnel
 
 function getAccessToken() {
     return localStorage.getItem('accessToken');
