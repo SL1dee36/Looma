@@ -119,8 +119,9 @@ export async function buildApp(options?: { dbPath?: string }) {
   return app;
 }
 
-const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMain) {
+const isTest =
+  process.argv.some((a) => a.includes('.test.')) || Boolean(process.env.NODE_TEST_CONTEXT);
+if (!isTest) {
   const app = await buildApp();
   try {
     await app.listen({ port: PORT, host: HOST });
