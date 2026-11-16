@@ -3,8 +3,9 @@ import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import type { ClientWsMessage, MediaItem } from '@looma/shared';
 import type { LoomaDb } from '../../db/index.js';
-import { rooms } from '../../db/schema.js';
+import { chatLogs, rooms, users } from '../../db/schema.js';
 import type { JwtPayload } from '../auth/routes.js';
+import type { SettingsService } from '../admin/settingsService.js';
 import { type LiveRoom, type RoomConnection, type RoomManager } from '../rooms/roomManager.js';
 
 function announceNowPlaying(roomManager: RoomManager, room: LiveRoom, item: MediaItem) {
@@ -24,9 +25,10 @@ function announceNowPlaying(roomManager: RoomManager, room: LiveRoom, item: Medi
 export function registerWsRoutes(
   app: FastifyInstance,
   db: LoomaDb,
-  roomManager: RoomManager
+  roomManager: RoomManager,
+  settingsService: SettingsService
 ) {
-  app.get('/ws/rooms/:code', { websocket: true }, (socket, request) => {
+  app.get('/ws/rooms/:code', { websocket: true }, async (socket, request) => {
     const { code } = request.params as { code: string };
     const query = request.query as { token?: string };
     const normalizedCode = code.trim().toUpperCase();
@@ -44,6 +46,13 @@ export function registerWsRoutes(
       return;
     }
 
+    const dbUser = db.select().from(users).where(eq(users.id, user.sub)).get();
+    if (!dbUser || dbUser.isBanned) {
+      socket.close(4003, 'Пользователь заблокирован');
+      return;
+    }
+    db.update(users).set({ lastIp: request.ip }).where(eq(users.id, user.sub)).run();
+
     let room = roomManager.getRoom(normalizedCode);
     if (!room) {
       const dbRoom = db.select().from(rooms).where(eq(rooms.code, normalizedCode)).get();
@@ -56,6 +65,7 @@ export function registerWsRoutes(
         name: dbRoom.name,
         ownerId: dbRoom.ownerId,
         isPersistent: dbRoom.isPersistent,
+        isHidden: dbRoom.isHidden,
         maxUsers: dbRoom.maxUsers,
       });
     }
@@ -74,9 +84,13 @@ export function registerWsRoutes(
       return;
     }
 
+    const settings = await settingsService.getSettings();
+    const snapshot = roomManager.getSnapshot(room);
+    snapshot.allowedDomains = settings.allowedDomains;
+
     roomManager.send(conn, {
       type: 'room:state',
-      state: roomManager.getSnapshot(room),
+      state: snapshot,
       serverTime: Date.now(),
     });
 
@@ -100,7 +114,7 @@ export function registerWsRoutes(
       roomManager.broadcast(room, { type: 'chat:message', message: joinMsg }, conn);
     }
 
-    socket.on('message', (raw: Buffer) => {
+    socket.on('message', async (raw: Buffer) => {
       let msg: ClientWsMessage;
       try {
         msg = JSON.parse(raw.toString()) as ClientWsMessage;
@@ -123,12 +137,51 @@ export function registerWsRoutes(
         case 'chat:send': {
           const text = typeof msg.text === 'string' ? msg.text.trim() : '';
           if (!text || text.length > 1000) return;
+
+          const currentUser = db.select().from(users).where(eq(users.id, conn.userId)).get();
+          if (!currentUser || currentUser.isBanned) {
+            roomManager.send(conn, { type: 'error', message: 'Вы заблокированы администратором' });
+            return;
+          }
+          if (currentUser.chatMutedUntil && currentUser.chatMutedUntil > now) {
+            const untilStr = new Date(currentUser.chatMutedUntil).toLocaleString('ru-RU');
+            roomManager.send(conn, {
+              type: 'error',
+              message: `Чат заблокирован для вас до ${untilStr}`,
+            });
+            return;
+          }
+
+          const check = await settingsService.checkMessage(conn.userId, text);
+          if (!check.ok) {
+            if (check.muteUntil) {
+              db.update(users)
+                .set({ chatMutedUntil: check.muteUntil })
+                .where(eq(users.id, conn.userId))
+                .run();
+            }
+            roomManager.send(conn, { type: 'error', message: check.reason });
+            return;
+          }
+
           const chatMsg = roomManager.pushMessage(room, {
             userId: conn.userId,
             username: conn.username,
-            text,
+            text: check.text,
             isGuest: conn.isGuest,
           });
+
+          db.insert(chatLogs)
+            .values({
+              id: chatMsg.id,
+              userId: conn.userId,
+              username: conn.username,
+              roomCode: room.code,
+              text: check.text,
+              createdAt: chatMsg.createdAt,
+            })
+            .run();
+
           roomManager.broadcast(room, { type: 'chat:message', message: chatMsg });
           break;
         }

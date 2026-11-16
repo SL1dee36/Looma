@@ -54,25 +54,86 @@ export const api = {
 
   me: () => request<{ user: UserDTO }>('/api/auth/me'),
 
-  listRooms: () =>
-    request<{
+  listRooms: (params?: {
+    q?: string;
+    usersFilter?: 'all' | 'with_users' | 'empty';
+    minUsers?: number;
+    control?: 'all' | 'everyone' | 'host';
+    sortUsers?: 'none' | 'desc' | 'asc';
+    limit?: number;
+    offset?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.set('q', params.q);
+    if (params?.usersFilter && params.usersFilter !== 'all') {
+      qs.set('usersFilter', params.usersFilter);
+    }
+    if (params?.minUsers && params.minUsers > 0) {
+      qs.set('minUsers', String(params.minUsers));
+    }
+    if (params?.control && params.control !== 'all') {
+      qs.set('control', params.control);
+    }
+    if (params?.sortUsers && params.sortUsers !== 'none') {
+      qs.set('sortUsers', params.sortUsers);
+    }
+    if (params?.limit !== undefined) qs.set('limit', String(params.limit));
+    if (params?.offset !== undefined) qs.set('offset', String(params.offset));
+    const queryStr = qs.toString();
+
+    return request<{
       rooms: Array<{
         code: string;
         name: string;
         participantsCount: number;
         maxUsers: number;
         currentTitle: string | null;
+        allowEveryoneControl: boolean;
       }>;
-    }>('/api/rooms'),
+      total: number;
+      hasMore: boolean;
+      savedRooms: Array<{
+        code: string;
+        name: string;
+        maxUsers: number;
+        isHidden: boolean;
+        createdAt: number;
+      }>;
+    }>(`/api/rooms${queryStr ? `?${queryStr}` : ''}`);
+  },
 
-  createRoom: (payload: { name: string; maxUsers?: number; isPersistent?: boolean }) =>
-    request<{ room: { code: string; name: string; maxUsers: number; isPersistent: boolean } }>(
-      '/api/rooms',
+  deleteRoom: (code: string) =>
+    request<{ ok: boolean }>(`/api/rooms/${encodeURIComponent(code)}`, {
+      method: 'DELETE',
+    }),
+
+  updateRoomSettings: (code: string, payload: { isPersistent?: boolean; isHidden?: boolean }) =>
+    request<{ isPersistent: boolean; isHidden: boolean }>(
+      `/api/rooms/${encodeURIComponent(code)}/settings`,
       {
-        method: 'POST',
+        method: 'PATCH',
         body: JSON.stringify(payload),
       }
     ),
+
+  createRoom: (payload: {
+    name: string;
+    maxUsers?: number;
+    isPersistent?: boolean;
+    isHidden?: boolean;
+  }) =>
+    request<{
+      room: {
+        code: string;
+        name: string;
+        maxUsers: number;
+        isPersistent: boolean;
+        isHidden: boolean;
+      };
+    }>('/api/rooms', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   getRoom: (code: string) =>
     request<{
@@ -83,6 +144,12 @@ export const api = {
     request<{ item: MediaItem }>('/api/media/resolve', {
       method: 'POST',
       body: JSON.stringify({ url }),
+    }),
+
+  sendSupportMessage: (payload: { subject: string; body: string; email: string }) =>
+    request<{ ok: boolean }>('/api/support/contact', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 };
 

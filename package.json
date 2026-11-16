@@ -11,7 +11,8 @@
     "dev": "concurrently -n server,web -c cyan,magenta \"npm run dev --workspace=@looma/server\" \"npm run dev --workspace=@looma/web\"",
     "build": "npm run build --workspace=@looma/shared && npm run build --workspace=@looma/server && npm run build --workspace=@looma/web",
     "start": "npm run start --workspace=@looma/server",
-    "test": "npm run test --workspace=@looma/server"
+    "test": "npm run test --workspace=@looma/server",
+    "stress": "node scripts/stress-test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

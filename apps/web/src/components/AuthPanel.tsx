@@ -10,8 +10,8 @@ interface AuthPanelProps {
 }
 
 export function AuthPanel({
-  title = 'Добро пожаловать в Looma',
-  subtitle = 'Введите никнейм для мгновенного входа или используйте постоянный аккаунт',
+  title,
+  subtitle = 'Платформа для совместного просмотра',
   onSuccess,
 }: AuthPanelProps) {
   const { loginAsGuest, login, register } = useAuthStore();
@@ -42,11 +42,15 @@ export function AuthPanel({
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#12141A] p-7 shadow-2xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold tracking-tight text-[#F3F4F6]">{title}</h2>
-        <p className="mt-1.5 text-sm text-zinc-400">{subtitle}</p>
-      </div>
+    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#12141A] p-6 shadow-2xl">
+      {(title || subtitle) && (
+        <div className="mb-5 text-center">
+          {title && <h2 className="text-base font-semibold tracking-tight text-[#F3F4F6]">{title}</h2>}
+          {subtitle && (
+            <p className={`${title ? 'mt-1' : ''} text-xs text-zinc-400`}>{subtitle}</p>
+          )}
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl bg-[#0B0C10] p-1 border border-white/6">
         <button
@@ -55,11 +59,10 @@ export function AuthPanel({
             setMode('guest');
             setError(null);
           }}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-            mode === 'guest'
-              ? 'bg-[#181B22] text-white shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${mode === 'guest'
+            ? 'bg-[#181B22] text-white shadow-sm'
+            : 'text-zinc-400 hover:text-zinc-200'
+            }`}
         >
           <Sparkles className="h-3.5 w-3.5" />
           Гость
@@ -70,11 +73,10 @@ export function AuthPanel({
             setMode('login');
             setError(null);
           }}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-            mode === 'login'
-              ? 'bg-[#181B22] text-white shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${mode === 'login'
+            ? 'bg-[#181B22] text-white shadow-sm'
+            : 'text-zinc-400 hover:text-zinc-200'
+            }`}
         >
           <LogIn className="h-3.5 w-3.5" />
           Вход
@@ -85,11 +87,10 @@ export function AuthPanel({
             setMode('register');
             setError(null);
           }}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-            mode === 'register'
-              ? 'bg-[#181B22] text-white shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${mode === 'register'
+            ? 'bg-[#181B22] text-white shadow-sm'
+            : 'text-zinc-400 hover:text-zinc-200'
+            }`}
         >
           <UserCheck className="h-3.5 w-3.5" />
           Аккаунт
@@ -104,6 +105,7 @@ export function AuthPanel({
             required
             minLength={2}
             maxLength={24}
+            autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Например, Alex"
@@ -119,6 +121,7 @@ export function AuthPanel({
               required
               minLength={6}
               maxLength={128}
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Минимум 6 символов"

@@ -5,6 +5,9 @@ import { buildApp } from './index.js';
 import { computePlaybackTime } from './modules/rooms/roomManager.js';
 import { UniversalPageProvider } from './modules/parser/universal.js';
 import { extractYouTubeId } from './modules/parser/youtube.js';
+import { createDatabase } from './db/index.js';
+import { SettingsService } from './modules/admin/settingsService.js';
+import { verifyEmailDomain } from './modules/support/routes.js';
 
 describe('Room sync math', () => {
   it('computes frozen time when paused', () => {
@@ -87,6 +90,99 @@ describe('Auth & Rooms API', () => {
     });
     assert.equal(getRes.statusCode, 200);
     assert.equal(getRes.json().room.name, 'Вечерний сеанс');
+
+    const secondPersistentRes = await app.inject({
+      method: 'POST',
+      url: '/api/rooms',
+      headers: { authorization: `Bearer ${regBody.token}` },
+      payload: { name: 'Второй зал', isPersistent: true },
+    });
+    assert.equal(secondPersistentRes.statusCode, 409);
+
+    const hiddenRes = await app.inject({
+      method: 'POST',
+      url: '/api/rooms',
+      headers: { authorization: `Bearer ${regBody.token}` },
+      payload: { name: 'Приватный зал', isPersistent: false, isHidden: true },
+    });
+    assert.equal(hiddenRes.statusCode, 201);
+    const hiddenCode = hiddenRes.json().room.code;
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/rooms',
+      headers: { authorization: `Bearer ${regBody.token}` },
+    });
+    assert.equal(listRes.statusCode, 200);
+    const listBody = listRes.json();
+    assert.equal(listBody.savedRooms.length, 1);
+    assert.equal(
+      listBody.rooms.some((r: { code: string }) => r.code === hiddenCode),
+      false
+    );
+
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/rooms/${room.code}/settings`,
+      headers: { authorization: `Bearer ${regBody.token}` },
+      payload: { isHidden: true },
+    });
+    assert.equal(patchRes.statusCode, 200);
+    assert.equal(patchRes.json().isHidden, true);
+
+    const adminLogin = await app.inject({
+      method: 'POST',
+      url: '/api/admin/login',
+      payload: { username: 'admin', password: 'admin' },
+    });
+    assert.equal(adminLogin.statusCode, 200);
+    const adminToken = adminLogin.json().token;
+    assert.ok(adminToken);
+
+    const adminUsers = await app.inject({
+      method: 'GET',
+      url: '/api/admin/users?q=Director',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    assert.equal(adminUsers.statusCode, 200);
+    assert.equal(adminUsers.json().users.length, 1);
+  });
+});
+
+describe('Support email validation', () => {
+  it('blocks disposable and non-existent email domains', async () => {
+    const disposable = await verifyEmailDomain('spammer@mailinator.com');
+    assert.equal(disposable.ok, false);
+
+    const nonexistent = await verifyEmailDomain('user@nonexistent-domain-looma-test-12345.invalid');
+    assert.equal(nonexistent.ok, false);
+  });
+});
+
+describe('Chat automoderation', () => {
+  it('mutes user after 5 identical messages in a row and masks banned words', async () => {
+    const { db, sqlite } = createDatabase(':memory:');
+    try {
+      const svc = new SettingsService(db);
+
+      const clean = await svc.checkMessage('u1', 'Привет мир fuck');
+      assert.equal(clean.ok, true);
+      if (clean.ok) {
+        assert.equal(clean.text, 'Привет мир ****');
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        const res = await svc.checkMessage('u2', 'спам');
+        assert.equal(res.ok, true);
+      }
+      const fifth = await svc.checkMessage('u2', 'спам');
+      assert.equal(fifth.ok, false);
+      if (!fifth.ok) {
+        assert.ok(fifth.muteUntil && fifth.muteUntil > Date.now());
+      }
+    } finally {
+      sqlite.close();
+    }
   });
 });
 

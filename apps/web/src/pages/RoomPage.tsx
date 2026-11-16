@@ -17,6 +17,7 @@ import {
   Play,
   Plus,
   Send,
+  Settings,
   Shield,
   Trash2,
   Users,
@@ -30,6 +31,52 @@ import { SyncPlayer } from '../components/player/SyncPlayer';
 import { ChatKeyboard } from '../components/chat/ChatKeyboard';
 
 type SidebarTab = 'chat' | 'search' | 'queue' | 'users';
+
+function renderSafeChatText(text: string, allowedDomains: string[]) {
+  const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+  const parts = text.split(urlRegex);
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+
+  return parts.map((part, idx) => {
+    if (!/^https?:\/\//i.test(part)) {
+      return <span key={idx}>{part}</span>;
+    }
+    let isAllowed = false;
+    try {
+      const host = new URL(part).hostname.toLowerCase().replace(/^www\./, '');
+      if (host === currentHost || host === currentHost.replace(/^www\./, '')) {
+        isAllowed = true;
+      } else {
+        isAllowed = allowedDomains.some((d) => {
+          const clean = d.toLowerCase().replace(/^www\./, '');
+          return host === clean || host.endsWith(`.${clean}`);
+        });
+      }
+    } catch {
+      isAllowed = false;
+    }
+
+    if (!isAllowed) {
+      return (
+        <span key={idx} className="text-zinc-400" title="Внешняя ссылка не кликабельна">
+          {part}
+        </span>
+      );
+    }
+
+    return (
+      <a
+        key={idx}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline text-indigo-300 hover:text-indigo-200 break-all"
+      >
+        {part}
+      </a>
+    );
+  });
+}
 
 function detectTouchOrMobile(): boolean {
   if (typeof window === 'undefined') return false;
@@ -66,6 +113,9 @@ export function RoomPage() {
   const [isResizing, setIsResizing] = useState(false);
   const [tab, setTab] = useState<SidebarTab>('chat');
   const [copied, setCopied] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   const [chatText, setChatText] = useState('');
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -145,17 +195,27 @@ export function RoomPage() {
 
   if (!user || !token) {
     return (
-      <div className="min-h-screen bg-[#0B0C10] flex flex-col items-center justify-center px-6">
-        <AuthPanel
-          title={`Вход в зал ${code.toUpperCase()}`}
-          subtitle="Представьтесь, чтобы подключиться к совместному просмотру"
-        />
+      <div className="min-h-screen bg-[#0B0C10] flex justify-center items-start pt-16 sm:pt-20 px-6">
+        <AuthPanel subtitle={`Подключение к залу ${code.toUpperCase()}`} />
       </div>
     );
   }
 
   const isHost = room.hostId === user.id;
+  const isOwner = room.ownerId === user.id;
   const canControl = isHost || room.allowEveryoneControl;
+
+  const updateRoomSetting = async (patch: { isPersistent?: boolean; isHidden?: boolean }) => {
+    setSettingsError(null);
+    setSavingSettings(true);
+    try {
+      await api.updateRoomSettings(room.code || code.toUpperCase(), patch);
+    } catch (err) {
+      setSettingsError(err instanceof Error ? err.message : 'Не удалось обновить настройки');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const copyInvite = async () => {
     await navigator.clipboard.writeText(window.location.href).catch(() => {});
@@ -240,24 +300,109 @@ export function RoomPage() {
             {room.latencyMs !== null && <span className="text-zinc-500">{room.latencyMs}ms</span>}
           </div>
 
-          {isHost && (
-            <button
-              onClick={() =>
-                room.send({
-                  type: 'room:toggle_control',
-                  allowEveryone: !room.allowEveryoneControl,
-                })
-              }
-              className={`hidden md:flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition cursor-pointer ${
-                room.allowEveryoneControl
-                  ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
-                  : 'border-white/8 bg-[#12141A] text-zinc-400 hover:text-white'
-              }`}
-              title="Разрешить всем участникам управлять плеером"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              {room.allowEveryoneControl ? 'Управляют все' : 'Только хост'}
-            </button>
+          {(isHost || isOwner) && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setSettingsOpen((v) => !v);
+                  setSettingsError(null);
+                }}
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs transition cursor-pointer ${
+                  settingsOpen
+                    ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
+                    : 'border-white/8 bg-[#12141A] text-zinc-400 hover:text-white'
+                }`}
+                title="Настройки зала"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden md:inline">Настройки</span>
+              </button>
+
+              {settingsOpen && (
+                <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl border border-white/10 bg-[#12141A] p-4 shadow-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white">Настройки зала</span>
+                    {isHost && (
+                      <span className="flex items-center gap-1 text-[10px] text-indigo-300">
+                        <Shield className="h-3 w-3" /> Хост
+                      </span>
+                    )}
+                  </div>
+
+                  {isHost && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/6 bg-[#0B0C10]/70 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-zinc-200">Управляют все</div>
+                        <div className="text-[11px] text-zinc-500">Плеер доступен всем</div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={room.allowEveryoneControl}
+                        data-checked={room.allowEveryoneControl ? 'true' : 'false'}
+                        onClick={() =>
+                          room.send({
+                            type: 'room:toggle_control',
+                            allowEveryone: !room.allowEveryoneControl,
+                          })
+                        }
+                        className="looma-switch"
+                      >
+                        <span className="looma-switch-thumb" />
+                      </button>
+                    </div>
+                  )}
+
+                  {isOwner && !user.isGuest && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/6 bg-[#0B0C10]/70 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-zinc-200">Вечная комната</div>
+                        <div className="text-[11px] text-zinc-500">
+                          Сохранить (макс. 1 на аккаунт)
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        disabled={savingSettings}
+                        aria-checked={room.isPersistent}
+                        data-checked={room.isPersistent ? 'true' : 'false'}
+                        onClick={() => updateRoomSetting({ isPersistent: !room.isPersistent })}
+                        className="looma-switch"
+                      >
+                        <span className="looma-switch-thumb" />
+                      </button>
+                    </div>
+                  )}
+
+                  {isOwner && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/6 bg-[#0B0C10]/70 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-zinc-200">Скрытый зал</div>
+                        <div className="text-[11px] text-zinc-500">Доступ только по ссылке</div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        disabled={savingSettings}
+                        aria-checked={room.isHidden}
+                        data-checked={room.isHidden ? 'true' : 'false'}
+                        onClick={() => updateRoomSetting({ isHidden: !room.isHidden })}
+                        className="looma-switch"
+                      >
+                        <span className="looma-switch-thumb" />
+                      </button>
+                    </div>
+                  )}
+
+                  {settingsError && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-300">
+                      {settingsError}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <button
@@ -502,7 +647,7 @@ export function RoomPage() {
                             <div className="space-y-1">
                               {entry.items.map((item) => (
                                 <p key={item.id} className="text-xs leading-relaxed break-words">
-                                  {item.text}
+                                  {renderSafeChatText(item.text, room.allowedDomains)}
                                 </p>
                               ))}
                             </div>

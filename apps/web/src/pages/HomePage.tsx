@@ -1,7 +1,7 @@
 // Author: Nazaryan Artem (@sl1dee36)
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Film, Plus, ArrowRight, Users, LogOut, Tv } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Film, Plus, ArrowRight, Users, LogOut, Tv, Bookmark, Trash2, EyeOff, Search } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../stores/useAuthStore';
 import { AuthPanel } from '../components/AuthPanel';
@@ -14,23 +14,48 @@ interface ActiveRoomSummary {
   currentTitle: string | null;
 }
 
+interface SavedRoomSummary {
+  code: string;
+  name: string;
+  maxUsers: number;
+  isHidden: boolean;
+  createdAt: number;
+}
+
 export function HomePage() {
   const navigate = useNavigate();
   const { user, initialized, logout } = useAuthStore();
 
   const [roomName, setRoomName] = useState('Вечерний сеанс');
   const [isPersistent, setIsPersistent] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeRooms, setActiveRooms] = useState<ActiveRoomSummary[]>([]);
+  const [totalRooms, setTotalRooms] = useState(0);
+  const [savedRooms, setSavedRooms] = useState<SavedRoomSummary[]>([]);
 
   useEffect(() => {
     api
-      .listRooms()
-      .then((res) => setActiveRooms(res.rooms))
+      .listRooms({ limit: 12, offset: 0 })
+      .then((res) => {
+        setActiveRooms(res.rooms);
+        setTotalRooms(res.total);
+        setSavedRooms(res.savedRooms ?? []);
+      })
       .catch(() => {});
   }, [user]);
+
+  const handleDeleteSaved = async (code: string) => {
+    try {
+      await api.deleteRoom(code);
+      setSavedRooms((prev) => prev.filter((r) => r.code !== code));
+      setActiveRooms((prev) => prev.filter((r) => r.code !== code));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось удалить комнату');
+    }
+  };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,6 +65,7 @@ export function HomePage() {
       const { room } = await api.createRoom({
         name: roomName.trim() || 'Кинозал',
         isPersistent,
+        isHidden,
       });
       navigate(`/room/${room.code}`);
     } catch (err) {
@@ -94,24 +120,16 @@ export function HomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+      <main className="flex-1 flex flex-col items-center justify-start px-6 pt-8 sm:pt-10 pb-10">
         {!initialized ? (
           <div className="text-sm text-zinc-500">Загрузка...</div>
         ) : !user ? (
-          <div className="w-full flex flex-col items-center">
-            <div className="mb-8 text-center max-w-lg">
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-                Смотрите вместе без задержек
-              </h1>
-              <p className="mt-3 text-sm text-zinc-400">
-                Синхронный кинозал для фильмов с kino.vin и YouTube. Минимализм, тишина и идеальный тайминг.
-              </p>
-            </div>
-            <AuthPanel />
+          <div className="w-full flex justify-center">
+            <AuthPanel subtitle="Платформа для совместного просмотра" />
           </div>
         ) : (
           <div className="w-full max-w-4xl space-y-8">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:sticky lg:top-20 lg:z-20 bg-[#0B0C10]/95 backdrop-blur-md pb-2">
               {/* Create Room Card */}
               <form
                 onSubmit={handleCreate}
@@ -136,17 +154,48 @@ export function HomePage() {
                       placeholder="Название кинозала"
                       className="w-full rounded-xl border border-white/10 bg-[#0B0C10] px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500/60"
                     />
-                    {!user.isGuest && (
-                      <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isPersistent}
-                          onChange={(e) => setIsPersistent(e.target.checked)}
-                          className="rounded border-white/20 bg-[#0B0C10] text-indigo-500"
-                        />
-                        Сохранить комнату навсегда
-                      </label>
-                    )}
+                    <div className="space-y-2.5 pt-1">
+                      {!user.isGuest && (
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-white/6 bg-[#0B0C10]/60 px-3 py-2">
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-zinc-200">Вечная комната</div>
+                            <div className="text-[11px] text-zinc-500">
+                              {savedRooms.length > 0
+                                ? `Уже создана (${savedRooms[0].code})`
+                                : 'Не удаляется после выхода всех'}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isPersistent}
+                            disabled={savedRooms.length > 0}
+                            data-checked={isPersistent ? 'true' : 'false'}
+                            onClick={() => setIsPersistent((v) => !v)}
+                            className="looma-switch"
+                          >
+                            <span className="looma-switch-thumb" />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/6 bg-[#0B0C10]/60 px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-zinc-200">Скрытый зал</div>
+                          <div className="text-[11px] text-zinc-500">Доступ только по ссылке</div>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isHidden}
+                          data-checked={isHidden ? 'true' : 'false'}
+                          onClick={() => setIsHidden((v) => !v)}
+                          className="looma-switch"
+                        >
+                          <span className="looma-switch-thumb" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -202,7 +251,49 @@ export function HomePage() {
               </div>
             )}
 
-            {/* Active Rooms */}
+            {savedRooms.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-medium uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                  <Bookmark className="h-3.5 w-3.5" />
+                  Мои сохранённые залы
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {savedRooms.map((r) => (
+                    <div
+                      key={r.code}
+                      onClick={() => navigate(`/room/${r.code}`)}
+                      className="group rounded-xl border border-indigo-500/20 bg-[#12141A] hover:border-indigo-500/50 p-4 transition cursor-pointer flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-sm text-white group-hover:text-indigo-300 transition truncate">
+                            {r.name}
+                          </span>
+                          {r.isHidden && (
+                            <span title="Скрытая комната (доступ только по ссылке)">
+                              <EyeOff className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 font-mono text-[11px] text-zinc-500">{r.code}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSaved(r.code);
+                        }}
+                        title="Удалить сохранённую комнату"
+                        className="rounded-lg p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeRooms.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-xs font-medium uppercase tracking-wider text-zinc-500">
@@ -236,11 +327,41 @@ export function HomePage() {
                     </button>
                   ))}
                 </div>
+
+                {totalRooms > 12 && (
+                  <div className="flex justify-center pt-3">
+                    <Link
+                      to="/rooms"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#12141A] hover:border-indigo-500/40 hover:bg-[#181B22] px-5 py-2.5 text-xs font-medium text-zinc-200 transition"
+                    >
+                      <Search className="h-3.5 w-3.5 text-indigo-400" />
+                      <span>Список всех залов ({totalRooms})</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-zinc-400" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
       </main>
+
+      <footer className="border-t border-white/8 py-5 px-6">
+        <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-500">
+          <span>© {new Date().getFullYear()} Looma</span>
+          <div className="flex items-center gap-5">
+            <Link to="/about" className="hover:text-zinc-200 transition">
+              О нас
+            </Link>
+            <Link to="/faq" className="hover:text-zinc-200 transition">
+              FAQ
+            </Link>
+            <Link to="/rules" className="hover:text-zinc-200 transition">
+              Правила
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

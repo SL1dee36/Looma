@@ -24,6 +24,9 @@ export function createDatabase(dbPath?: string) {
       username TEXT NOT NULL,
       password_hash TEXT,
       is_guest INTEGER NOT NULL DEFAULT 1,
+      last_ip TEXT,
+      is_banned INTEGER NOT NULL DEFAULT 0,
+      chat_muted_until INTEGER,
       created_at INTEGER NOT NULL
     );
 
@@ -36,10 +39,39 @@ export function createDatabase(dbPath?: string) {
       name TEXT NOT NULL,
       owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       is_persistent INTEGER NOT NULL DEFAULT 0,
+      is_hidden INTEGER NOT NULL DEFAULT 0,
       max_users INTEGER NOT NULL DEFAULT 20,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS chat_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      username TEXT NOT NULL,
+      room_code TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_logs_user_id ON chat_logs(user_id);
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
+
+  for (const alterSql of [
+    'ALTER TABLE rooms ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE users ADD COLUMN last_ip TEXT',
+    'ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE users ADD COLUMN chat_muted_until INTEGER',
+  ]) {
+    try {
+      sqlite.exec(alterSql);
+    } catch {
+    }
+  }
 
   const db = drizzle(sqlite, { schema });
   return { db, sqlite };

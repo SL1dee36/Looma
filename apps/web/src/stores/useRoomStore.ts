@@ -14,8 +14,12 @@ interface RoomStoreState {
   error: string | null;
   code: string | null;
   name: string;
+  ownerId: string | null;
   hostId: string | null;
+  isPersistent: boolean;
+  isHidden: boolean;
   allowEveryoneControl: boolean;
+  allowedDomains: string[];
   playback: PlaybackState | null;
   queue: MediaItem[];
   participants: RoomParticipant[];
@@ -36,8 +40,12 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
   error: null,
   code: null,
   name: '',
+  ownerId: null,
   hostId: null,
+  isPersistent: false,
+  isHidden: false,
   allowEveryoneControl: false,
+  allowedDomains: [],
   playback: null,
   queue: [],
   participants: [],
@@ -57,7 +65,7 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}
+    const wsUrl = `${protocol}//${window.location.host}/ws/rooms/${encodeURIComponent(
       code
     )}?token=${encodeURIComponent(token)}`;
 
@@ -90,8 +98,12 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
           set({
             code: msg.state.code,
             name: msg.state.name,
+            ownerId: msg.state.ownerId,
             hostId: msg.state.hostId,
+            isPersistent: msg.state.isPersistent,
+            isHidden: msg.state.isHidden,
             allowEveryoneControl: msg.state.allowEveryoneControl,
+            allowedDomains: msg.state.allowedDomains ?? [],
             playback: msg.state.playback,
             queue: msg.state.queue,
             participants: msg.state.participants,
@@ -123,7 +135,11 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
           break;
 
         case 'room:settings':
-          set({ allowEveryoneControl: msg.allowEveryoneControl });
+          set((s) => ({
+            allowEveryoneControl: msg.allowEveryoneControl,
+            isPersistent: msg.isPersistent ?? s.isPersistent,
+            isHidden: msg.isHidden ?? s.isHidden,
+          }));
           break;
 
         case 'chat:message':

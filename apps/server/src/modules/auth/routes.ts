@@ -52,6 +52,7 @@ export function registerAuthRoutes(app: FastifyInstance, db: LoomaDb) {
         username,
         passwordHash: null,
         isGuest: true,
+        lastIp: request.ip,
         createdAt: now,
       })
       .run();
@@ -92,6 +93,7 @@ export function registerAuthRoutes(app: FastifyInstance, db: LoomaDb) {
         username,
         passwordHash,
         isGuest: false,
+        lastIp: request.ip,
         createdAt: Date.now(),
       })
       .run();
@@ -119,6 +121,11 @@ export function registerAuthRoutes(app: FastifyInstance, db: LoomaDb) {
     if (!found || !found.passwordHash || !(await verifyPassword(password, found.passwordHash))) {
       return reply.code(401).send({ error: 'Неверный никнейм или пароль' });
     }
+    if (found.isBanned) {
+      return reply.code(403).send({ error: 'Аккаунт заблокирован администратором' });
+    }
+
+    db.update(users).set({ lastIp: request.ip }).where(eq(users.id, found.id)).run();
 
     const user: UserDTO = { id: found.id, username: found.username, isGuest: false };
     const token = app.jwt.sign(
@@ -132,6 +139,9 @@ export function registerAuthRoutes(app: FastifyInstance, db: LoomaDb) {
     const found = db.select().from(users).where(eq(users.id, request.user.sub)).get();
     if (!found) {
       return reply.code(401).send({ error: 'Сессия недействительна' });
+    }
+    if (found.isBanned) {
+      return reply.code(403).send({ error: 'Аккаунт заблокирован администратором' });
     }
     const user: UserDTO = {
       id: found.id,

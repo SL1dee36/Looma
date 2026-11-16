@@ -15,8 +15,24 @@ import { RoomManager } from './modules/rooms/roomManager.js';
 import { registerRoomRoutes } from './modules/rooms/routes.js';
 import { registerWsRoutes } from './modules/ws/handler.js';
 import { registerMediaRoutes } from './modules/parser/routes.js';
+import { registerSupportRoutes } from './modules/support/routes.js';
+import { SettingsService } from './modules/admin/settingsService.js';
+import { registerAdminRoutes } from './modules/admin/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+for (const envCandidate of [
+  path.resolve(__dirname, '../../../.env'),
+  path.resolve(process.cwd(), '.env'),
+]) {
+  if (fs.existsSync(envCandidate)) {
+    try {
+      process.loadEnvFile?.(envCandidate);
+      break;
+    } catch {
+    }
+  }
+}
 
 const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -30,6 +46,8 @@ export async function buildApp(options?: { dbPath?: string }) {
   });
 
   const { db, sqlite } = createDatabase(options?.dbPath);
+  const settingsService = new SettingsService(db);
+  await settingsService.getSettings();
   const roomManager = new RoomManager({
     onRoomBurned: (code) => {
       db.delete(rooms)
@@ -37,6 +55,18 @@ export async function buildApp(options?: { dbPath?: string }) {
         .run();
     },
   });
+
+  const persistentRooms = db.select().from(rooms).where(eq(rooms.isPersistent, true)).all();
+  for (const r of persistentRooms) {
+    roomManager.getOrInitRoom({
+      code: r.code,
+      name: r.name,
+      ownerId: r.ownerId,
+      isPersistent: r.isPersistent,
+      isHidden: r.isHidden,
+      maxUsers: r.maxUsers,
+    });
+  }
 
   app.addHook('onClose', async () => {
     roomManager.dispose();
@@ -67,7 +97,9 @@ export async function buildApp(options?: { dbPath?: string }) {
   registerAuthRoutes(app, db);
   registerRoomRoutes(app, db, roomManager);
   registerMediaRoutes(app);
-  registerWsRoutes(app, db, roomManager);
+  registerSupportRoutes(app, settingsService);
+  registerAdminRoutes(app, db, roomManager, settingsService);
+  registerWsRoutes(app, db, roomManager, settingsService);
 
   const webDistPath = path.resolve(__dirname, '../../web/dist');
   if (fs.existsSync(webDistPath)) {

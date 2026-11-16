@@ -23,6 +23,7 @@ export interface LiveRoom {
   ownerId: string;
   hostId: string;
   isPersistent: boolean;
+  isHidden: boolean;
   maxUsers: number;
   allowEveryoneControl: boolean;
   playback: PlaybackState;
@@ -54,6 +55,7 @@ export class RoomManager {
     name: string;
     ownerId: string;
     isPersistent: boolean;
+    isHidden?: boolean;
     maxUsers: number;
   }): LiveRoom {
     const existing = this.rooms.get(params.code);
@@ -71,6 +73,7 @@ export class RoomManager {
       ownerId: params.ownerId,
       hostId: params.ownerId,
       isPersistent: params.isPersistent,
+      isHidden: Boolean(params.isHidden),
       maxUsers: params.maxUsers,
       allowEveryoneControl: false,
       playback: {
@@ -92,14 +95,73 @@ export class RoomManager {
     return this.rooms.get(code);
   }
 
-  listActiveRooms() {
-    return Array.from(this.rooms.values()).map((r) => ({
-      code: r.code,
-      name: r.name,
-      participantsCount: this.getParticipants(r).length,
-      maxUsers: r.maxUsers,
-      currentTitle: r.playback.media?.title ?? null,
-    }));
+  listActiveRooms(filters?: {
+    q?: string;
+    usersFilter?: 'all' | 'with_users' | 'empty';
+    minUsers?: number;
+    control?: 'all' | 'everyone' | 'host';
+    sortUsers?: 'none' | 'desc' | 'asc';
+    limit?: number;
+    offset?: number;
+  }) {
+    const q = filters?.q?.trim().toLowerCase() ?? '';
+    const usersFilter = filters?.usersFilter ?? 'all';
+    const minUsers = filters?.minUsers ?? 0;
+    const control = filters?.control ?? 'all';
+    const sortUsers = filters?.sortUsers ?? 'none';
+
+    let list = Array.from(this.rooms.values())
+      .filter((r) => !r.isHidden)
+      .map((r) => ({
+        code: r.code,
+        name: r.name,
+        participantsCount: this.getParticipants(r).length,
+        maxUsers: r.maxUsers,
+        currentTitle: r.playback.media?.title ?? null,
+        allowEveryoneControl: r.allowEveryoneControl,
+      }));
+
+    if (q) {
+      list = list.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          r.code.toLowerCase().includes(q) ||
+          (r.currentTitle && r.currentTitle.toLowerCase().includes(q))
+      );
+    }
+
+    if (usersFilter === 'with_users') {
+      list = list.filter((r) => r.participantsCount > 0);
+    } else if (usersFilter === 'empty') {
+      list = list.filter((r) => r.participantsCount === 0);
+    }
+
+    if (minUsers > 0) {
+      list = list.filter((r) => r.participantsCount >= minUsers);
+    }
+
+    if (control === 'everyone') {
+      list = list.filter((r) => r.allowEveryoneControl);
+    } else if (control === 'host') {
+      list = list.filter((r) => !r.allowEveryoneControl);
+    }
+
+    if (sortUsers === 'desc') {
+      list.sort((a, b) => b.participantsCount - a.participantsCount);
+    } else if (sortUsers === 'asc') {
+      list.sort((a, b) => a.participantsCount - b.participantsCount);
+    }
+
+    const total = list.length;
+    const offset = Math.max(0, filters?.offset ?? 0);
+    const limit = Math.min(50, Math.max(1, filters?.limit ?? 12));
+    const items = list.slice(offset, offset + limit);
+
+    return {
+      items,
+      total,
+      hasMore: offset + items.length < total,
+    };
   }
 
   addConnection(room: LiveRoom, conn: RoomConnection): boolean {
@@ -173,7 +235,10 @@ export class RoomManager {
     return {
       code: room.code,
       name: room.name,
+      ownerId: room.ownerId,
       hostId: room.hostId,
+      isPersistent: room.isPersistent,
+      isHidden: room.isHidden,
       allowEveryoneControl: room.allowEveryoneControl,
       playback: { ...room.playback },
       queue: [...room.queue],
@@ -209,6 +274,14 @@ export class RoomManager {
     if (conn.socket.readyState === 1) {
       conn.socket.send(JSON.stringify(payload));
     }
+  }
+
+  forceDeleteRoom(code: string) {
+    const room = this.rooms.get(code);
+    if (room?.emptyTimer) {
+      clearTimeout(room.emptyTimer);
+    }
+    this.rooms.delete(code);
   }
 
   dispose() {

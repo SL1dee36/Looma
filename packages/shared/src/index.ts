@@ -58,8 +58,12 @@ export interface ChatMessage {
 export interface RoomStateSnapshot {
   code: string;
   name: string;
+  ownerId: string;
   hostId: string;
+  isPersistent: boolean;
+  isHidden: boolean;
   allowEveryoneControl: boolean;
+  allowedDomains?: string[];
   playback: PlaybackState;
   queue: MediaItem[];
   participants: RoomParticipant[];
@@ -84,7 +88,7 @@ export type ServerWsMessage =
   | { type: 'player:sync'; playback: PlaybackState; serverTime: number; actorId: string }
   | { type: 'queue:updated'; queue: MediaItem[]; playback: PlaybackState; serverTime: number }
   | { type: 'participants:updated'; participants: RoomParticipant[]; hostId: string }
-  | { type: 'room:settings'; allowEveryoneControl: boolean }
+  | { type: 'room:settings'; allowEveryoneControl: boolean; isPersistent?: boolean; isHidden?: boolean }
   | { type: 'chat:message'; message: ChatMessage }
   | { type: 'pong'; clientTime: number; serverTime: number }
   | { type: 'error'; message: string };
