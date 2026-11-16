@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Cpu,
   EyeOff,
-  Film,
   HardDrive,
   KeyRound,
   Loader2,
@@ -380,9 +379,7 @@ export function AdminPage() {
         <header className="border-b border-white/8 bg-[#0B0C10]/80">
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-400/30 text-indigo-300">
-                <Film className="h-4 w-4" />
-              </div>
+              <img src="/favicon.svg" alt="Looma" className="h-8 w-8 shrink-0" />
               <span className="text-base font-semibold tracking-tight">Looma Admin</span>
             </Link>
           </div>
@@ -441,9 +438,7 @@ export function AdminPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2.5 hover:opacity-90">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-400/30 text-indigo-300">
-                <Film className="h-4 w-4" />
-              </div>
+              <img src="/favicon.svg" alt="Looma" className="h-8 w-8 shrink-0" />
               <span className="text-base font-semibold tracking-tight">Looma Admin</span>
             </Link>
           </div>

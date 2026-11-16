@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="looma-pill" x1="0" y1="9" x2="64" y2="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8" />
+      <stop offset="55%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="9" width="64" height="46" rx="14" fill="url(#looma-pill)" />
+
+  <path
+    d="M32 19C34.4 26.2 37.8 29.6 45 32C37.8 34.4 34.4 37.8 32 45C29.6 37.8 26.2 34.4 19 32C26.2 29.6 29.6 26.2 32 19Z"
+    fill="#F8FAFC"
+  />
+</svg>

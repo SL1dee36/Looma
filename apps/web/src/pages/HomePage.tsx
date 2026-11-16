@@ -1,7 +1,7 @@
 // Author: Nazaryan Artem (@sl1dee36)
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Film, Plus, ArrowRight, Users, LogOut, Tv, Bookmark, Trash2, EyeOff, Search } from 'lucide-react';
+import { Plus, ArrowRight, Users, LogOut, Tv, Bookmark, Trash2, EyeOff, Search } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../stores/useAuthStore';
 import { AuthPanel } from '../components/AuthPanel';
@@ -94,9 +94,7 @@ export function HomePage() {
       <header className="border-b border-white/8 bg-[#0B0C10]/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-400/30 text-indigo-300">
-              <Film className="h-4 w-4" />
-            </div>
+            <img src="/favicon.svg" alt="Looma" className="h-8 w-8 shrink-0" />
             <span className="text-base font-semibold tracking-tight">Looma</span>
           </div>
 
